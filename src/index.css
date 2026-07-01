@@ -1,36 +1,28 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Nanum+Gothic+Coding:wght@400;700&display=swap');
-
-@font-face {
-    font-family: 'JejuStoneWall';
-    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-deep: #0e0f12;          /* Solid dark gallery slate */
-  --bg-dark: #131418;          /* Solid deep charcoal */
-  --bg-card: #18191d;          /* Solid dark clay panels (no transparency) */
-  --bg-glass: #1e2025;         /* Solid panel highlight */
+  --bg-deep: hsl(230, 32%, 5%);
+  --bg-dark: hsl(230, 30%, 8%);
+  --bg-card: hsla(230, 25%, 12%, 0.45);
+  --bg-glass: hsla(230, 28%, 8%, 0.35);
   
-  --text-primary: #f5f4f0;      /* Silk white/cream */
-  --text-secondary: #9c9a94;    /* Muted stone grey */
-  --text-muted: #6b6963;        /* Dark stone grey */
+  --text-primary: hsl(220, 15%, 96%);
+  --text-secondary: hsl(220, 10%, 65%);
+  --text-muted: hsl(220, 10%, 45%);
   
-  --color-primary: #c5a880;     /* Premium Gold/Sand accent */
-  --color-primary-glow: rgba(197, 168, 128, 0.08);
-  --color-accent: #c2593f;      /* Terracotta / Rust */
-  --color-accent-glow: rgba(194, 89, 63, 0.08);
+  --color-primary: hsl(239, 84%, 67%);
+  --color-primary-glow: hsla(239, 84%, 67%, 0.15);
+  --color-accent: hsl(272, 88%, 68%);
+  --color-accent-glow: hsla(272, 88%, 68%, 0.15);
   
-  --border-glass: rgba(255, 255, 255, 0.06);
-  --border-glow: rgba(197, 168, 128, 0.2);
+  --border-glass: rgba(255, 255, 255, 0.04);
+  --border-glow: rgba(99, 102, 241, 0.25);
   
-  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  --font-display: 'JejuStoneWall', serif;
-  --font-mono: 'Nanum Gothic Coding', monospace;
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Grotesk', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
-  --shadow-premium: 0 16px 40px rgba(0, 0, 0, 0.45);
+  --shadow-neon: 0 0 20px hsla(239, 84%, 67%, 0.25), 0 0 40px hsla(239, 84%, 67%, 0.12);
+  --shadow-neon-accent: 0 0 20px hsla(272, 88%, 68%, 0.25), 0 0 40px hsla(272, 88%, 68%, 0.12);
   
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -51,29 +43,29 @@ html, body {
   background-color: var(--bg-deep);
   color: var(--text-primary);
   font-family: var(--font-sans);
-  overflow-x: hidden;
-  letter-spacing: -0.01em;
+  overflow: hidden;
+  letter-spacing: -0.015em;
 }
 
-/* Custom Scrollbars - Sand Gold / Grey */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-deep);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-primary-glow);
-  border-radius: 9999px;
-  border: 1px solid rgba(197, 168, 128, 0.15);
-  transition: all 0.3s ease;
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 99px;
+  transition: all 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-primary);
+  box-shadow: var(--shadow-neon);
 }
 
 #root {
@@ -82,56 +74,90 @@ html, body {
   position: relative;
   overflow: hidden;
   display: flex;
-  background: var(--bg-deep);
+}
+
+/* Sci-fi Scanline Overlay */
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.25) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 99;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* CRT Light Flicker Animation */
+@keyframes flicker {
+  0% { opacity: 0.97; }
+  50% { opacity: 1.0; }
+  100% { opacity: 0.98; }
+}
+
+body {
+  animation: flicker 0.15s infinite;
 }
 
 /* Animations */
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-8px) rotate(0.5deg); }
 }
 
 @keyframes pulse-ring {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.03); opacity: 0.4; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  0% { transform: scale(0.98); opacity: 0.9; }
+  50% { transform: scale(1.03); opacity: 0.5; }
+  100% { transform: scale(0.98); opacity: 0.9; }
 }
 
-@keyframes sound-wave-bar {
-  0%, 100% { transform: scaleY(0.1); }
-  50% { transform: scaleY(1); }
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Overhauled flat solid card panels (Replacing standard transparency) */
+/* Glassmorphism Styles */
 .glass {
   background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--shadow-premium);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--border-glass);
 }
 
 .glass-interactive {
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: hsla(230, 25%, 10%, 0.3);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-glass);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .glass-interactive:hover {
-  background: var(--bg-glass);
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
+  background: hsla(230, 25%, 15%, 0.6);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: var(--shadow-neon);
+  transform: translateY(-2px);
 }
 
 .text-gradient {
-  color: var(--color-primary);
-  font-family: var(--font-display);
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #6366f1 100%);
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Global Styles for Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   margin: 0;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.025em;
 }
 
 button {

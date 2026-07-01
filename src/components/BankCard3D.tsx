@@ -25,106 +25,111 @@ export function BankCard3D({
   onClick,
 }: BankCardProps) {
   const meshRef = useRef<THREE.Group>(null);
+  const glowMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+  
   const [isHovered, setIsHovered] = useState(false);
   const mousePos = useRef({ x: 0, y: 0 });
   const floatDelay = useMemo(() => Math.random() * Math.PI * 2, []);
 
-  // Generate dynamic credit card canvas texture
+  // Generate dynamic premium credit card texture
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 320;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // Rounded card shape
-      ctx.fillStyle = '#0a0d1a';
-      ctx.beginPath();
-      ctx.roundRect(0, 0, 512, 320, 24);
-      ctx.fill();
+      // Sleek background dark fill
+      ctx.fillStyle = '#05070e';
+      ctx.fillRect(0, 0, 512, 320);
 
-      // Subtle cyber grid lines on background
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+      // Subtle abstract glowing arc overlay
+      const radialGrad = ctx.createRadialGradient(256, 160, 50, 256, 160, 300);
+      radialGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
+      radialGrad.addColorStop(1, 'rgba(3, 7, 18, 0.95)');
+      ctx.fillStyle = radialGrad;
+      ctx.fillRect(0, 0, 512, 320);
+
+      // Draw cyber circuits grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
       ctx.lineWidth = 1;
-      for (let i = 0; i < 512; i += 20) {
+      for (let i = 0; i < 512; i += 16) {
         ctx.beginPath();
         ctx.moveTo(i, 0);
         ctx.lineTo(i, 320);
         ctx.stroke();
       }
-      for (let j = 0; j < 320; j += 20) {
+      for (let j = 0; j < 320; j += 16) {
         ctx.beginPath();
         ctx.moveTo(0, j);
         ctx.lineTo(512, j);
         ctx.stroke();
       }
 
-      // Draw metallic background gradient
-      const grad = ctx.createLinearGradient(0, 0, 512, 320);
-      grad.addColorStop(0, 'rgba(15, 23, 42, 0.7)');
-      grad.addColorStop(1, 'rgba(3, 7, 18, 0.95)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.roundRect(0, 0, 512, 320, 24);
-      ctx.fill();
-
-      // Glowing Neon border using bank brand color
-      ctx.shadowColor = brandColor;
-      ctx.shadowBlur = 12;
+      // Neon outline inside card
       ctx.strokeStyle = brandColor;
-      ctx.lineWidth = 6;
+      ctx.lineWidth = 4;
+      ctx.shadowColor = brandColor;
+      ctx.shadowBlur = 10;
       ctx.beginPath();
-      ctx.roundRect(6, 6, 500, 308, 20);
+      ctx.roundRect(10, 10, 492, 300, 16);
       ctx.stroke();
-
-      // Reset shadows for card details
       ctx.shadowBlur = 0;
 
-      // Draw gold-plated SIM Chip
+      // Chip details
       const chipGrad = ctx.createLinearGradient(40, 100, 100, 148);
       chipGrad.addColorStop(0, '#f59e0b');
       chipGrad.addColorStop(0.5, '#fbbf24');
-      chipGrad.addColorStop(1, '#d97706');
+      chipGrad.addColorStop(1, '#b45309');
       ctx.fillStyle = chipGrad;
       ctx.beginPath();
-      ctx.roundRect(40, 100, 60, 48, 8);
+      ctx.roundRect(40, 95, 56, 44, 6);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(48, 108, 44, 32);
+      ctx.strokeRect(46, 101, 44, 32);
 
-      // Bank Brand Name (JejuStoneWall)
+      // Wifi/NFC waves
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.lineWidth = 2.5;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.arc(125, 117, 8 + i * 5, -Math.PI / 4, Math.PI / 4);
+        ctx.stroke();
+      }
+
+      // Bank Brand Name
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 36px JejuStoneWall, sans-serif';
-      ctx.fillText(name, 40, 65);
+      ctx.font = 'bold 34px Outfit, sans-serif';
+      ctx.fillText(name, 40, 60);
 
-      // License tag (NanumSquareRound)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = '500 12px NanumSquareRound, sans-serif';
-      ctx.fillText(license.toUpperCase(), 40, 85);
+      // License type tag
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+      ctx.font = '700 11px Space Grotesk, sans-serif';
+      ctx.fillText(license.toUpperCase(), 40, 78);
 
-      // USSD Code colored by brandColor (NanumSquareRound)
+      // USSD Code
       ctx.fillStyle = brandColor;
-      ctx.font = 'bold 24px NanumSquareRound, sans-serif';
-      ctx.fillText(`USSD: ${ussd}`, 40, 200);
+      ctx.font = 'bold 22px Space Grotesk, sans-serif';
+      ctx.fillText(`USSD: ${ussd}`, 40, 195);
 
-      // Bottom Metadata
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.font = '12px NanumSquareRound, sans-serif';
-      ctx.fillText("WAZOBIA AI CHATBOT", 40, 260);
-      
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px JejuStoneWall, sans-serif';
-      ctx.fillText("CLICK TO CHAT & VOICE", 40, 280);
-
-      // Interactive NFC circles colored by brandColor
+      // Monogram text inside circles
       ctx.fillStyle = brandColor;
       ctx.beginPath();
       ctx.arc(430, 240, 36, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.beginPath();
       ctx.arc(460, 240, 36, 0, Math.PI * 2);
       ctx.fill();
+
+      // Bottom Platform Metadata
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.font = '10px Space Grotesk, sans-serif';
+      ctx.fillText("WAZOBIA AI PLATFORM SYSTEM", 40, 255);
+      
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '600 13px Outfit, sans-serif';
+      ctx.fillText("CLICK TO ESTABLISH LINK", 40, 275);
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -134,19 +139,23 @@ export function BankCard3D({
   useFrame((state) => {
     if (!meshRef.current) return;
 
-    // Hover scales & camera offsets
     const time = state.clock.getElapsedTime();
-    const floatOffset = Math.sin(time * 1.8 + floatDelay) * 0.05;
+    
+    // Animate glowing outline opacity dynamically on GPU
+    if (glowMaterialRef.current) {
+      glowMaterialRef.current.opacity = 0.35 + Math.sin(time * 4 + floatDelay) * 0.2;
+    }
 
-    // Smooth hover scaling
+    // Hover scales & camera offsets
+    const floatOffset = Math.sin(time * 1.5 + floatDelay) * 0.04;
     let targetScale = isSelected ? 1.15 : isHovered ? 1.08 : 1.0;
     let targetX = position[0];
     let targetY = position[1] + floatOffset;
     let targetZ = position[2];
 
     if (isSelected) {
-      targetY = 0.3; // Push upwards slightly when selected
-      targetZ = position[2] + 0.5; // Zoom out/forward
+      targetY = 0.28;
+      targetZ = position[2] + 0.6;
     }
 
     // Lerp positions & scales
@@ -154,7 +163,7 @@ export function BankCard3D({
     meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, targetY, 0.1);
     meshRef.current.position.z = THREE.MathUtils.lerp(meshRef.current.position.z, targetZ, 0.1);
 
-    // Hover tilt effect
+    // Hover tilt physics
     let targetRotX = 0;
     let targetRotY = rotationY;
 
@@ -171,7 +180,6 @@ export function BankCard3D({
   const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
     if (meshRef.current) {
-      // Compute mouse position relative to mesh center [-1, 1]
       const box = new THREE.Box3().setFromObject(meshRef.current);
       const center = new THREE.Vector3();
       box.getCenter(center);
@@ -201,24 +209,35 @@ export function BankCard3D({
         onClick();
       }}
     >
-      {/* Front Face: Dynamic Texture */}
+      {/* Dynamic Front texture mapped onto thin box */}
       <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[2.5, 1.56, 0.05]} />
-        <meshBasicMaterial map={texture} transparent opacity={0.95} />
+        <boxGeometry args={[2.5, 1.56, 0.04]} />
+        <meshPhysicalMaterial
+          map={texture}
+          transparent
+          opacity={0.88}
+          roughness={0.15}
+          metalness={0.2}
+          transmission={0.65}
+          thickness={0.5}
+          clearcoat={1.0}
+          clearcoatRoughness={0.08}
+          ior={1.45}
+        />
       </mesh>
-      {/* Outer Glow ring (active when hovered) */}
-      {(isHovered || isSelected) && (
-        <mesh position={[0, 0, -0.01]} scale={1.03}>
-          <planeGeometry args={[2.5, 1.56]} />
-          <meshBasicMaterial
-            color={brandColor}
-            transparent
-            opacity={0.35}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      )}
+
+      {/* Holographic glowing wireframe edge outline */}
+      <mesh position={[0, 0, 0]} scale={1.015}>
+        <boxGeometry args={[2.5, 1.56, 0.04]} />
+        <meshBasicMaterial
+          ref={glowMaterialRef}
+          color={brandColor}
+          wireframe
+          transparent
+          opacity={0.4}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
     </group>
   );
 }

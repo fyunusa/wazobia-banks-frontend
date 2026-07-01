@@ -38,13 +38,13 @@ export function StarsBackground() {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.06}
-        color="#c5a880"
+        size={0.12}
+        color="#a5b4fc"
         sizeAttenuation={true}
         transparent={true}
-        opacity={0.35}
+        opacity={0.65}
         depthWrite={false}
-        blending={THREE.NormalBlending}
+        blending={THREE.AdditiveBlending}
       />
     </points>
   );

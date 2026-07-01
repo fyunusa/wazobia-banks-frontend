@@ -1,21 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { StarsBackground } from './components/StarsBackground';
 import { BankCarousel3D } from './components/BankCarousel3D';
 import type { BankData } from './components/BankCarousel3D';
 import { ChatPanel } from './components/ChatPanel';
 import { AdminPortal } from './components/AdminPortal';
 import { fetchInstitutions } from './services/api';
-import { Sparkles, Settings } from 'lucide-react';
+import { HelpCircle, ChevronRight, Sparkles, Settings } from 'lucide-react';
 
-interface RichBankData extends BankData {
-  acronym: string;
-}
-
-const FALLBACK_BANKS: RichBankData[] = [
+const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'gtbank',
     name: 'GTBank',
-    acronym: 'GTB',
     full_name: 'Guaranty Trust Bank',
     brandColor: '#dd4f05',
     ussd: '*737#',
@@ -24,7 +20,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'zenith',
     name: 'Zenith Bank',
-    acronym: 'ZEN',
     full_name: 'Zenith Bank PLC',
     brandColor: '#d30007',
     ussd: '*966#',
@@ -33,7 +28,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'access',
     name: 'Access Bank',
-    acronym: 'ACC',
     full_name: 'Access Bank PLC',
     brandColor: '#00b0ff',
     ussd: '*901#',
@@ -42,7 +36,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'firstbank',
     name: 'FirstBank',
-    acronym: 'FBN',
     full_name: 'First Bank of Nigeria',
     brandColor: '#bf9b30',
     ussd: '*894#',
@@ -51,7 +44,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'uba',
     name: 'UBA',
-    acronym: 'UBA',
     full_name: 'United Bank for Africa',
     brandColor: '#e11d48',
     ussd: '*919#',
@@ -60,7 +52,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'union',
     name: 'Union Bank',
-    acronym: 'UBN',
     full_name: 'Union Bank of Nigeria',
     brandColor: '#009fe3',
     ussd: '*826#',
@@ -69,7 +60,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'sterling',
     name: 'Sterling Bank',
-    acronym: 'STB',
     full_name: 'Sterling Bank PLC',
     brandColor: '#e11d48',
     ussd: '*822#',
@@ -78,7 +68,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'wema',
     name: 'Wema Bank',
-    acronym: 'WMA',
     full_name: 'Wema Bank PLC',
     brandColor: '#8a1538',
     ussd: '*945#',
@@ -87,7 +76,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'fidelity',
     name: 'Fidelity Bank',
-    acronym: 'FID',
     full_name: 'Fidelity Bank PLC',
     brandColor: '#002d62',
     ussd: '*770#',
@@ -96,7 +84,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'fcmb',
     name: 'FCMB',
-    acronym: 'FCM',
     full_name: 'First City Monument Bank',
     brandColor: '#fbbf24',
     ussd: '*329#',
@@ -105,7 +92,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'stanbic',
     name: 'Stanbic IBTC',
-    acronym: 'SIB',
     full_name: 'Stanbic IBTC Bank',
     brandColor: '#0033a0',
     ussd: '*909#',
@@ -114,7 +100,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'opay',
     name: 'OPay',
-    acronym: 'OPY',
     full_name: 'OPay Digital Services',
     brandColor: '#00b074',
     ussd: '*955#',
@@ -123,7 +108,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'kuda',
     name: 'Kuda Bank',
-    acronym: 'KUD',
     full_name: 'Kuda Microfinance Bank',
     brandColor: '#40196d',
     ussd: '*894#',
@@ -132,7 +116,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'moniepoint',
     name: 'Moniepoint',
-    acronym: 'MNP',
     full_name: 'Moniepoint MFB',
     brandColor: '#0052cc',
     ussd: '*5573#',
@@ -141,7 +124,6 @@ const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'palmpay',
     name: 'PalmPay',
-    acronym: 'PLM',
     full_name: 'PalmPay Limited',
     brandColor: '#7c3aed',
     ussd: '*652#',
@@ -150,23 +132,10 @@ const FALLBACK_BANKS: RichBankData[] = [
 ];
 
 function App() {
-  const [banks, setBanks] = useState<RichBankData[]>(FALLBACK_BANKS);
+  const [banks, setBanks] = useState<BankData[]>(FALLBACK_BANKS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [carouselAngle, setCarouselAngle] = useState(0);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
-
-  // GSAP Animation References
-  const hudHeaderRef = useRef<HTMLDivElement>(null);
-  const dockRef = useRef<HTMLDivElement>(null);
-
-  // Helper to convert hex to rgb for background theme color transition
-  const getBankBgColor = (hex: string) => {
-    const c = hex.replace('#', '');
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    return `rgba(${r}, ${g}, ${b}, 0.22)`;
-  };
 
   // Fetch dynamic active institutions on mount and merge details
   useEffect(() => {
@@ -177,7 +146,6 @@ function App() {
           return {
             slug: dyn.slug,
             name: dyn.name,
-            acronym: local?.acronym || dyn.name.substring(0, 3).toUpperCase(),
             full_name: dyn.full_name,
             brandColor: local?.brandColor || '#6366f1',
             ussd: dyn.ussd_code || local?.ussd || '*737#',
@@ -195,39 +163,13 @@ function App() {
 
   const selectedBank = banks.find((b) => b.slug === selectedSlug);
 
-  // Coordinated GSAP Slide Animations for Dashboard elements on selection
-  useEffect(() => {
-    import('gsap').then(({ gsap }) => {
-      const targetGlow = selectedBank ? getBankBgColor(selectedBank.brandColor) : 'rgba(0,0,0,0)';
-      
-      if (selectedSlug) {
-        // Selected: slide dashboard controls out
-        gsap.to(hudHeaderRef.current, { y: -100, opacity: 0, duration: 0.5, ease: 'power3.inOut' });
-        gsap.to(dockRef.current, { y: 120, opacity: 0, duration: 0.5, ease: 'power3.inOut' });
-      } else {
-        // Deselected: slide dashboard controls in
-        gsap.to(hudHeaderRef.current, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' });
-        gsap.to(dockRef.current, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' });
-      }
-
-      // Transition the container background to match the selected bank color dynamically
-      gsap.to('.dashboard-container', {
-        background: selectedSlug 
-          ? `radial-gradient(circle at 50% 50%, ${targetGlow} 0%, #0e0f12 90%)`
-          : '#0e0f12',
-        duration: 0.8,
-        ease: 'power2.out'
-      });
-    });
-  }, [selectedSlug, selectedBank]);
-
   return (
     <div className="dashboard-container">
       {/* Dynamic Cyber Grid Background Overlay */}
       <div className="grid-overlay" />
 
-      {/* Global Header HUD (Slides out on select) */}
-      <header ref={hudHeaderRef} className="hud-header glass">
+      {/* Global Header HUD */}
+      <header className="hud-header glass">
         <div className="header-top-row">
           <div className="header-logo">
             <Sparkles className="logo-spark" />
@@ -239,23 +181,52 @@ function App() {
             className="admin-portal-btn glass-interactive"
             onClick={() => setIsAdminOpen(true)}
           >
-            <Settings size={14} />
+            <Settings size={13} className="settings-icon" />
             <span>Admin Portal</span>
           </button>
         </div>
-        <p className="subtitle">Interactive Multilingual Banking Workspace</p>
+        <p className="subtitle">Nigeria's Interactive 3D Multilingual Banking Assistant</p>
       </header>
 
+      {/* Left Sidebar List Navigation */}
+      <aside className="sidebar glass">
+        <div className="sidebar-title">
+          <h2>INSTITUTIONS</h2>
+          <span className="count-label">{banks.length} active</span>
+        </div>
+        <div className="sidebar-list">
+          {banks.map((b) => (
+            <button
+              key={b.slug}
+              className={`sidebar-item glass-interactive ${selectedSlug === b.slug ? 'active' : ''}`}
+              style={{
+                borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined
+              }}
+              onClick={() => setSelectedSlug(b.slug)}
+            >
+              <div className="item-meta">
+                <span className="dot" style={{ backgroundColor: b.brandColor }} />
+                <span className="item-name">{b.name}</span>
+              </div>
+              <ChevronRight size={14} className="arrow" />
+            </button>
+          ))}
+        </div>
+      </aside>
+
       {/* Primary 3D Rendering Area */}
-      <main className="canvas-wrapper">
+      <main className={`canvas-wrapper ${selectedSlug ? 'shift-left' : ''}`}>
         <Canvas
           camera={{ position: [0, 0.4, 4.5], fov: 60 }}
           style={{ width: '100%', height: '100%' }}
         >
           {/* Lighting */}
-          <ambientLight intensity={0.7} />
-          <pointLight position={[10, 10, 10]} intensity={1.5} />
-          <directionalLight position={[-5, 5, 5]} intensity={0.8} />
+          <ambientLight intensity={0.8} />
+          <pointLight position={[10, 10, 10]} intensity={1.8} />
+          <directionalLight position={[-5, 5, 5]} intensity={1.0} />
+
+          {/* Star particles */}
+          <StarsBackground />
 
           {/* 3D Bank Carousel */}
           <BankCarousel3D
@@ -266,26 +237,17 @@ function App() {
             setCarouselAngle={setCarouselAngle}
           />
         </Canvas>
+
+        {/* Floating guidance overlay */}
+        {!selectedSlug && (
+          <div className="guide-hud">
+            <HelpCircle className="guide-icon" size={16} />
+            <span>DRAG SCENE TO SPIN • CLICK A CARD TO CONNECT</span>
+          </div>
+        )}
       </main>
 
-      {/* Floating Bottom Bank Dock (Horizontal selector dock replacing the left sidebar) */}
-      <div ref={dockRef} className="bottom-dock glass">
-        <div className="dock-label">SYSTEM CONSOLES</div>
-        <div className="dock-items-wrapper">
-          {banks.map((b) => (
-            <button
-              key={b.slug}
-              className={`dock-item glass-interactive ${selectedSlug === b.slug ? 'active' : ''}`}
-              onClick={() => setSelectedSlug(b.slug)}
-            >
-              <span className="dock-dot" style={{ backgroundColor: b.brandColor }} />
-              <span className="dock-name">{b.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Full-Screen Workspace Panel (overlaid when selection active) */}
+      {/* Floating Chat Panel (rendered when selection active) */}
       {selectedBank && (
         <ChatPanel
           bank={selectedBank}
@@ -307,32 +269,34 @@ function App() {
           height: 100vh;
           position: relative;
           overflow: hidden;
-          background: var(--bg-deep);
-          font-family: var(--font-sans);
+          background: #020306;
         }
 
         .grid-overlay {
-          display: none;
+          position: absolute;
+          inset: 0;
+          background-image: 
+            linear-gradient(rgba(99, 102, 241, 0.015) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(99, 102, 241, 0.015) 1px, transparent 1px);
+          background-size: 40px 40px;
+          background-position: center;
+          pointer-events: none;
+          z-index: 1;
         }
 
         .hud-header {
           position: absolute;
-          top: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 520px;
-          max-width: calc(100% - 40px);
-          padding: 16px 24px;
-          border-radius: 12px;
+          top: 20px;
+          left: 20px;
+          width: 340px;
+          padding: 14px 20px;
+          border-radius: 16px;
           z-index: 10;
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          background: var(--bg-card);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          box-shadow: var(--shadow-premium);
-          text-align: center;
+          gap: 4px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .header-top-row {
@@ -349,53 +313,179 @@ function App() {
         }
 
         .logo-spark {
-          color: var(--color-primary);
+          color: var(--color-accent);
+          animation: spin 8s linear infinite;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .hud-header h1 {
-          font-size: 19px;
+          font-size: 18px;
           margin: 0;
-          font-weight: 700;
+          font-weight: 800;
           letter-spacing: 0.05em;
+          text-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
         }
 
         .badge {
-          font-size: 9px;
-          background: rgba(197, 168, 128, 0.1);
+          font-size: 8px;
+          background: var(--color-primary-glow);
           color: var(--color-primary);
-          border: 1px solid rgba(197, 168, 128, 0.2);
-          padding: 2px 6px;
-          border-radius: 4px;
+          border: 1px solid var(--border-glow);
+          padding: 1px 6px;
+          border-radius: 9999px;
           font-weight: 700;
           font-family: var(--font-mono);
+          box-shadow: 0 0 10px rgba(99, 102, 241, 0.1);
         }
 
         .admin-portal-btn {
           display: flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 12px;
+          padding: 6px 10px;
           border-radius: 8px;
           background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           color: var(--text-secondary);
-          font-size: 10px;
+          font-size: 9px;
           font-weight: 700;
           text-transform: uppercase;
-          transition: all 0.2s;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          font-family: var(--font-mono);
         }
 
         .admin-portal-btn:hover {
           color: #fff;
-          background: rgba(197, 168, 128, 0.1);
-          border-color: var(--color-primary);
+          background: var(--color-primary-glow);
+          border-color: rgba(99, 102, 241, 0.35);
+          box-shadow: var(--shadow-neon);
+          transform: translateY(-1px);
+        }
+
+        .admin-portal-btn .settings-icon {
+          animation: rotate-settings 20s linear infinite;
+        }
+
+        @keyframes rotate-settings {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
         }
 
         .subtitle {
-          font-size: 10px;
+          font-size: 9px;
           color: var(--text-secondary);
           font-weight: 500;
-          letter-spacing: 0.02em;
+        }
+
+        .sidebar {
+          position: absolute;
+          left: 20px;
+          top: 116px;
+          bottom: 20px;
+          width: 280px;
+          border-radius: 20px;
+          z-index: 10;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar-title {
+          padding: 18px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: rgba(13, 17, 34, 0.4);
+        }
+
+        .sidebar-title h2 {
+          font-size: 12px;
+          color: #fff;
+          letter-spacing: 0.08em;
+        }
+
+        .count-label {
+          font-size: 10px;
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+          font-weight: 600;
+        }
+
+        .sidebar-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .sidebar-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          border-radius: 12px;
+          text-align: left;
+          background: rgba(255, 255, 255, 0.01);
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .sidebar-item .dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          box-shadow: 0 0 6px currentColor;
+        }
+
+        .sidebar-item .item-meta {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .sidebar-item .item-name {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-secondary);
+          transition: color 0.3s;
+        }
+
+        .sidebar-item:hover .item-name {
+          color: #fff;
+        }
+
+        .sidebar-item.active {
+          background: rgba(255, 255, 255, 0.04);
+          box-shadow: var(--shadow-neon);
+          border-color: rgba(99, 102, 241, 0.2);
+        }
+
+        .sidebar-item.active .item-name {
+          color: #fff;
+          font-weight: 600;
+        }
+
+        .sidebar-item .arrow {
+          color: var(--text-muted);
+          opacity: 0;
+          transform: translateX(-4px);
+          transition: all 0.3s;
+        }
+
+        .sidebar-item:hover .arrow,
+        .sidebar-item.active .arrow {
+          opacity: 1;
+          transform: translateX(0);
+          color: #fff;
         }
 
         .canvas-wrapper {
@@ -404,110 +494,37 @@ function App() {
           position: absolute;
           inset: 0;
           z-index: 2;
+          transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .canvas-wrapper.shift-left {
+          transform: translateX(-160px);
         }
 
         .guide-hud {
           position: absolute;
-          bottom: 124px;
+          bottom: 24px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 10;
           display: flex;
           align-items: center;
           gap: 8px;
-          background: var(--bg-card);
-          border: 1px solid rgba(255, 255, 255, 0.04);
+          background: rgba(10, 12, 22, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           padding: 8px 18px;
-          border-radius: 8px;
+          border-radius: 9999px;
           font-size: 10px;
-          letter-spacing: 0.05em;
-          color: var(--color-primary);
+          letter-spacing: 0.08em;
+          color: var(--text-secondary);
           font-family: var(--font-mono);
-          box-shadow: var(--shadow-premium);
+          backdrop-filter: blur(10px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
         }
 
         .guide-icon {
           color: var(--color-primary);
-        }
-
-        /* Bottom dock layout replacing left sidebar */
-        .bottom-dock {
-          position: absolute;
-          bottom: 24px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 85%;
-          max-width: 900px;
-          border-radius: 12px;
-          z-index: 10;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 20px;
-          background: var(--bg-card);
-          box-shadow: var(--shadow-premium);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .dock-label {
-          font-size: 9px;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: var(--text-muted);
-          font-weight: 800;
-          font-family: var(--font-mono);
-        }
-
-        .dock-items-wrapper {
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          width: 100%;
-          padding-bottom: 4px;
-          justify-content: flex-start;
-        }
-        
-        .dock-items-wrapper::-webkit-scrollbar {
-          display: none;
-        }
-
-        .dock-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 12px;
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.015);
-          border: 1px solid rgba(255, 255, 255, 0.03);
-          color: var(--text-secondary);
-          font-size: 11px;
-          font-weight: 700;
-          white-space: nowrap;
-          transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-        }
-
-        .dock-item:hover {
-          transform: translateY(-1px);
-          background: rgba(255, 255, 255, 0.04);
-          border-color: rgba(255, 255, 255, 0.15);
-          color: #fff;
-        }
-
-        .dock-item.active {
-          background: var(--bg-glass);
-          border-color: var(--color-primary);
-          color: #fff;
-        }
-
-        .dock-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
+          animation: pulse-ring 2s infinite;
         }
       `}</style>
     </div>

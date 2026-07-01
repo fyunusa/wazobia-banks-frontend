@@ -52,12 +52,6 @@ export function BankCarousel3D({
     // Smoothly lerp current angle to target angle
     currentAngle.current = THREE.MathUtils.lerp(currentAngle.current, carouselAngle, 0.07);
     groupRef.current.rotation.y = currentAngle.current;
-
-    // Smoothly shift group coordinates leftwards and back when selected to clear space for the chat console
-    const targetX = selectedSlug ? -1.8 : 0;
-    const targetZ = selectedSlug ? -1.2 : 0;
-    groupRef.current.position.x = THREE.MathUtils.lerp(groupRef.current.position.x, targetX, 0.07);
-    groupRef.current.position.z = THREE.MathUtils.lerp(groupRef.current.position.z, targetZ, 0.07);
   });
 
   // Custom pointer drag handlers for rotating the carousel
