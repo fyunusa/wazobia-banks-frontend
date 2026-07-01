@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { StarsBackground } from './components/StarsBackground';
 import { BankCarousel3D } from './components/BankCarousel3D';
 import type { BankData } from './components/BankCarousel3D';
 import { ChatPanel } from './components/ChatPanel';
 import { AdminPortal } from './components/AdminPortal';
 import { fetchInstitutions } from './services/api';
-import { HelpCircle, Sparkles, Settings } from 'lucide-react';
+import { Sparkles, Settings } from 'lucide-react';
 
 interface RichBankData extends BankData {
   acronym: string;
@@ -159,7 +158,15 @@ function App() {
   // GSAP Animation References
   const hudHeaderRef = useRef<HTMLDivElement>(null);
   const dockRef = useRef<HTMLDivElement>(null);
-  const guideHudRef = useRef<HTMLDivElement>(null);
+
+  // Helper to convert hex to rgb for background theme color transition
+  const getBankBgColor = (hex: string) => {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.22)`;
+  };
 
   // Fetch dynamic active institutions on mount and merge details
   useEffect(() => {
@@ -186,24 +193,33 @@ function App() {
       });
   }, []);
 
+  const selectedBank = banks.find((b) => b.slug === selectedSlug);
+
   // Coordinated GSAP Slide Animations for Dashboard elements on selection
   useEffect(() => {
     import('gsap').then(({ gsap }) => {
+      const targetGlow = selectedBank ? getBankBgColor(selectedBank.brandColor) : 'rgba(0,0,0,0)';
+      
       if (selectedSlug) {
         // Selected: slide dashboard controls out
         gsap.to(hudHeaderRef.current, { y: -100, opacity: 0, duration: 0.5, ease: 'power3.inOut' });
         gsap.to(dockRef.current, { y: 120, opacity: 0, duration: 0.5, ease: 'power3.inOut' });
-        gsap.to(guideHudRef.current, { opacity: 0, duration: 0.3 });
       } else {
         // Deselected: slide dashboard controls in
         gsap.to(hudHeaderRef.current, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' });
         gsap.to(dockRef.current, { y: 0, opacity: 1, duration: 0.6, ease: 'power3.out' });
-        gsap.to(guideHudRef.current, { opacity: 1, duration: 0.4 });
       }
-    });
-  }, [selectedSlug]);
 
-  const selectedBank = banks.find((b) => b.slug === selectedSlug);
+      // Transition the container background to match the selected bank color dynamically
+      gsap.to('.dashboard-container', {
+        background: selectedSlug 
+          ? `radial-gradient(circle at 50% 50%, ${targetGlow} 0%, #0e0f12 90%)`
+          : '#0e0f12',
+        duration: 0.8,
+        ease: 'power2.out'
+      });
+    });
+  }, [selectedSlug, selectedBank]);
 
   return (
     <div className="dashboard-container">
@@ -241,9 +257,6 @@ function App() {
           <pointLight position={[10, 10, 10]} intensity={1.5} />
           <directionalLight position={[-5, 5, 5]} intensity={0.8} />
 
-          {/* Star particles */}
-          <StarsBackground />
-
           {/* 3D Bank Carousel */}
           <BankCarousel3D
             banks={banks}
@@ -253,12 +266,6 @@ function App() {
             setCarouselAngle={setCarouselAngle}
           />
         </Canvas>
-
-        {/* Floating guidance overlay */}
-        <div ref={guideHudRef} className="guide-hud">
-          <HelpCircle className="guide-icon" size={16} />
-          <span>DRAG TO ROTATE CAROUSEL • SELECT CARD TO INITIATE CONSOLE</span>
-        </div>
       </main>
 
       {/* Floating Bottom Bank Dock (Horizontal selector dock replacing the left sidebar) */}

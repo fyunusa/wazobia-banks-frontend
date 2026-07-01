@@ -36,76 +36,100 @@ export function BankCard3D({
     canvas.height = 320;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      // Solid base plate (Slate matte black)
-      ctx.fillStyle = '#141519';
+      // Rounded card shape
+      ctx.fillStyle = '#0a0d1a';
       ctx.beginPath();
       ctx.roundRect(0, 0, 512, 320, 24);
       ctx.fill();
 
-      // Minimal premium texture overlay (very faint vertical accent lines)
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+      // Subtle cyber grid lines on background
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
       ctx.lineWidth = 1;
-      for (let i = 20; i < 500; i += 40) {
+      for (let i = 0; i < 512; i += 20) {
         ctx.beginPath();
-        ctx.moveTo(i, 20);
-        ctx.lineTo(i, 300);
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 320);
+        ctx.stroke();
+      }
+      for (let j = 0; j < 320; j += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, j);
+        ctx.lineTo(512, j);
         ctx.stroke();
       }
 
-      // Elegant solid sand-gold border (no neon shadows)
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = isSelected ? '#c5a880' : isHovered ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.08)';
-      ctx.lineWidth = isSelected ? 4 : 2;
+      // Draw metallic background gradient
+      const grad = ctx.createLinearGradient(0, 0, 512, 320);
+      grad.addColorStop(0, 'rgba(15, 23, 42, 0.7)');
+      grad.addColorStop(1, 'rgba(3, 7, 18, 0.95)');
+      ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.roundRect(4, 4, 504, 312, 20);
+      ctx.roundRect(0, 0, 512, 320, 24);
+      ctx.fill();
+
+      // Glowing Neon border using bank brand color
+      ctx.shadowColor = brandColor;
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = brandColor;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.roundRect(6, 6, 500, 308, 20);
       ctx.stroke();
 
-      // Faint organic watermark monogram in background
-      ctx.fillStyle = 'rgba(197, 168, 128, 0.02)';
-      ctx.font = '800 130px JejuStoneWall, sans-serif';
-      ctx.fillText(name.substring(0, 3).toUpperCase(), 140, 205);
+      // Reset shadows for card details
+      ctx.shadowBlur = 0;
 
-      // Gold SIM Chip
-      const chipGrad = ctx.createLinearGradient(40, 105, 90, 145);
-      chipGrad.addColorStop(0, '#c5a880');
-      chipGrad.addColorStop(0.5, '#ebdcb9');
-      chipGrad.addColorStop(1, '#a6875b');
+      // Draw gold-plated SIM Chip
+      const chipGrad = ctx.createLinearGradient(40, 100, 100, 148);
+      chipGrad.addColorStop(0, '#f59e0b');
+      chipGrad.addColorStop(0.5, '#fbbf24');
+      chipGrad.addColorStop(1, '#d97706');
       ctx.fillStyle = chipGrad;
       ctx.beginPath();
-      ctx.roundRect(40, 105, 50, 40, 6);
+      ctx.roundRect(40, 100, 60, 48, 8);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(46, 111, 38, 28);
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(48, 108, 44, 32);
 
       // Bank Brand Name (JejuStoneWall)
-      ctx.fillStyle = '#f5f4f0';
+      ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 36px JejuStoneWall, sans-serif';
-      ctx.fillText(name, 40, 68);
+      ctx.fillText(name, 40, 65);
 
-      // License Category Pill (Gold Sand)
-      ctx.fillStyle = '#c5a880';
-      ctx.font = 'bold 12px JejuStoneWall, sans-serif';
-      ctx.fillText(license.toUpperCase(), 40, 92);
+      // License tag (NanumSquareRound)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = '500 12px NanumSquareRound, sans-serif';
+      ctx.fillText(license.toUpperCase(), 40, 85);
 
-      // USSD Code (NanumSquareRound)
-      ctx.fillStyle = '#f5f4f0';
+      // USSD Code colored by brandColor (NanumSquareRound)
+      ctx.fillStyle = brandColor;
       ctx.font = 'bold 24px NanumSquareRound, sans-serif';
-      ctx.fillText(`USSD: ${ussd}`, 40, 195);
+      ctx.fillText(`USSD: ${ussd}`, 40, 200);
 
       // Bottom Metadata
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
       ctx.font = '12px NanumSquareRound, sans-serif';
-      ctx.fillText("WAZOBIA BANKING SUITE", 40, 255);
+      ctx.fillText("WAZOBIA AI CHATBOT", 40, 260);
       
-      ctx.fillStyle = '#c5a880';
-      ctx.font = 'bold 13px JejuStoneWall, sans-serif';
-      ctx.fillText("OPEN SYSTEM CONSOLE →", 40, 280);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px JejuStoneWall, sans-serif';
+      ctx.fillText("CLICK TO CHAT & VOICE", 40, 280);
+
+      // Interactive NFC circles colored by brandColor
+      ctx.fillStyle = brandColor;
+      ctx.beginPath();
+      ctx.arc(430, 240, 36, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.beginPath();
+      ctx.arc(460, 240, 36, 0, Math.PI * 2);
+      ctx.fill();
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
-  }, [name, brandColor, ussd, license, isSelected, isHovered]);
+  }, [name, brandColor, ussd, license]);
 
   useFrame((state) => {
     if (!meshRef.current) return;
@@ -182,15 +206,15 @@ export function BankCard3D({
         <boxGeometry args={[2.5, 1.56, 0.05]} />
         <meshBasicMaterial map={texture} transparent opacity={0.95} />
       </mesh>
-
-      {/* Outer Border outline frame (active when selected or hovered) */}
+      {/* Outer Glow ring (active when hovered) */}
       {(isHovered || isSelected) && (
-        <mesh position={[0, 0, -0.026]} scale={1.025}>
+        <mesh position={[0, 0, -0.01]} scale={1.03}>
           <planeGeometry args={[2.5, 1.56]} />
           <meshBasicMaterial
-            color={isSelected ? '#c5a880' : 'rgba(255,255,255,0.45)'}
+            color={brandColor}
             transparent
-            opacity={0.8}
+            opacity={0.35}
+            blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
           />
         </mesh>

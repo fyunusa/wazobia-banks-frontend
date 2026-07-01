@@ -534,10 +534,6 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         {/* ================= COLUMN 2: Conversational Hub ================= */}
         <div ref={centerColRef} className="workspace-column center glass">
           <div className="chat-header-row">
-            <div className="chat-badge">
-              <span className="pulse" />
-              <span>ACTIVE SESSION</span>
-            </div>
             <div className="chat-mode-selector">
               <button 
                 className={`mode-btn ${chatMode === 'text' ? 'active' : ''}`}
