@@ -194,67 +194,98 @@ function App() {
         />
       )}
 
+      {/* Subtle floating settings button on the homepage to allow admin access */}
+      {!selectedSlug && (
+        <button 
+          className="admin-portal-btn glass-interactive"
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            zIndex: 100,
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'rgba(255, 255, 255, 0.02)',
+            color: 'var(--text-secondary)'
+          }}
+          onClick={() => setIsAdminOpen(true)}
+          title="Admin Ingestion Portal"
+        >
+          <Settings size={18} className="settings-icon" />
+        </button>
+      )}
+
       {/* Global Header HUD */}
-      <header className={`hud-header ${selectedBank ? 'themed-white' : 'glass'}`}>
-        <div className="header-top-row">
-          <div className="header-logo">
-            <Landmark className="logo-spark" style={{ color: selectedBank ? selectedBank.brandColor : undefined }} />
-            <h1 className={selectedBank ? 'themed-text-title' : 'text-gradient'}>WAZOBIA BANKS</h1>
+      {selectedSlug && (
+        <header className={`hud-header ${selectedBank ? 'themed-white' : 'glass'}`}>
+          <div className="header-top-row">
+            <div className="header-logo">
+              <Landmark className="logo-spark" style={{ color: selectedBank ? selectedBank.brandColor : undefined }} />
+              <h1 className={selectedBank ? 'themed-text-title' : 'text-gradient'}>WAZOBIA BANKS</h1>
+            </div>
+            
+            <button 
+              className={`admin-portal-btn ${selectedBank ? 'themed-btn' : 'glass-interactive'}`}
+              style={{
+                borderColor: selectedBank ? `${selectedBank.brandColor}33` : undefined
+              }}
+              onClick={() => setIsAdminOpen(true)}
+            >
+              <Settings size={13} className="settings-icon" />
+              <span>Admin Portal</span>
+            </button>
           </div>
-          
-          <button 
-            className={`admin-portal-btn ${selectedBank ? 'themed-btn' : 'glass-interactive'}`}
-            style={{
-              borderColor: selectedBank ? `${selectedBank.brandColor}33` : undefined
-            }}
-            onClick={() => setIsAdminOpen(true)}
-          >
-            <Settings size={13} className="settings-icon" />
-            <span>Admin Portal</span>
-          </button>
-        </div>
-        <p className="subtitle" style={{ color: selectedBank ? '#64748b' : undefined }}>
-          Nigeria's Interactive 3D Multilingual Banking Assistant
-        </p>
-      </header>
+          <p className="subtitle" style={{ color: selectedBank ? '#64748b' : undefined }}>
+            Nigeria's Interactive 3D Multilingual Banking Assistant
+          </p>
+        </header>
+      )}
 
       {/* Left Sidebar List Navigation */}
-      <aside className={`sidebar ${selectedBank ? 'themed-white' : 'glass'}`}>
-        <div 
-          className="sidebar-title"
-          style={{
-            backgroundColor: selectedBank ? selectedBank.brandColor : undefined,
-            borderBottom: selectedBank ? `1px solid rgba(0, 0, 0, 0.05)` : undefined
-          }}
-        >
-          <h2 style={{ color: selectedBank ? '#fff' : undefined }}>INSTITUTIONS</h2>
-          <span 
-            className="count-label"
-            style={{ color: selectedBank ? 'rgba(255, 255, 255, 0.8)' : undefined }}
+      {selectedSlug && (
+        <aside className={`sidebar ${selectedBank ? 'themed-white' : 'glass'}`}>
+          <div 
+            className="sidebar-title"
+            style={{
+              backgroundColor: selectedBank ? selectedBank.brandColor : undefined,
+              borderBottom: selectedBank ? `1px solid rgba(0, 0, 0, 0.05)` : undefined
+            }}
           >
-            {banks.length} active
-          </span>
-        </div>
-        <div className="sidebar-list">
-          {banks.map((b) => (
-            <button
-              key={b.slug}
-              className={`sidebar-item ${selectedSlug === b.slug ? 'active' : ''} ${selectedBank ? 'themed-item' : 'glass-interactive'}`}
-              style={{
-                borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined,
-                backgroundColor: selectedSlug === b.slug ? (selectedBank ? `${b.brandColor}10` : undefined) : undefined,
-              }}
-              onClick={() => setSelectedSlug(b.slug)}
+            <h2 style={{ color: selectedBank ? '#fff' : undefined }}>INSTITUTIONS</h2>
+            <span 
+              className="count-label"
+              style={{ color: selectedBank ? 'rgba(255, 255, 255, 0.8)' : undefined }}
             >
-              <div className="item-meta">
-                <span className="dot" style={{ backgroundColor: b.brandColor, boxShadow: `0 0 6px ${b.brandColor}` }} />
-                <span className="item-name">{b.name}</span>
-              </div>
-              <ChevronRight size={14} className="arrow" />
-            </button>
-          ))}
-        </div>
-      </aside>
+              {banks.length} active
+            </span>
+          </div>
+          <div className="sidebar-list">
+            {banks.map((b) => (
+              <button
+                key={b.slug}
+                className={`sidebar-item ${selectedSlug === b.slug ? 'active' : ''} ${selectedBank ? 'themed-item' : 'glass-interactive'}`}
+                style={{
+                  borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined,
+                  backgroundColor: selectedSlug === b.slug ? (selectedBank ? `${b.brandColor}10` : undefined) : undefined,
+                }}
+                onClick={() => setSelectedSlug(b.slug)}
+              >
+                <div className="item-meta">
+                  <span className="dot" style={{ backgroundColor: b.brandColor, boxShadow: `0 0 6px ${b.brandColor}` }} />
+                  <span className="item-name">{b.name}</span>
+                </div>
+                <ChevronRight size={14} className="arrow" />
+              </button>
+            ))}
+          </div>
+        </aside>
+      )}
 
       {/* Primary 3D Rendering Area */}
       <main className={`canvas-wrapper ${selectedSlug ? 'shift-left' : ''}`}>

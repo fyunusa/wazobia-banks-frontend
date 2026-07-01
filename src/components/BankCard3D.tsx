@@ -125,7 +125,7 @@ export function BankCard3D({
       // Bottom Platform Metadata
       ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
       ctx.font = '10px Space Grotesk, sans-serif';
-      ctx.fillText("WAZOBIA BANKS SYSTEM", 40, 255);
+      ctx.fillText("SECURE BANKING HUB", 40, 255);
       
       ctx.fillStyle = '#ffffff';
       ctx.font = '600 13px Outfit, sans-serif';

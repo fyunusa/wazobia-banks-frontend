@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, X, ArrowRight, Play, Square, Loader } from 'lucide-react';
-import { submitQuery, fetchSuggestedQuestions, streamVoiceQuery } from '../services/api';
+import { submitQuery, fetchSuggestedQuestions, streamVoiceQuery, submitVoiceQuery } from '../services/api';
 import type { QueryResponse } from '../services/api';
 import { WazobiaVoiceClient } from '../services/websocket';
 import { AudioWaveform } from './AudioWaveform';
@@ -24,7 +24,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ bank, onClose }: ChatPanelProps) {
   const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
-  const [voiceMethod, setVoiceMethod] = useState<'sse' | 'ws'>('sse');
+  const [voiceMethod, setVoiceMethod] = useState<'sse' | 'ws' | 'rest'>('sse');
   const [language, setLanguage] = useState<string>('en');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   
@@ -223,7 +223,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
     }
   };
 
-  const handleVoiceMethodChange = (method: 'sse' | 'ws') => {
+  const handleVoiceMethodChange = (method: 'sse' | 'ws' | 'rest') => {
     setVoiceMethod(method);
     cleanupAudio();
     cleanupConnections();
@@ -337,7 +337,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
       }
     } else {
-      // SSE Streaming Mode (Recommended)
+      // Local Recording Mode (SSE or REST)
       if (isRecording) {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
           mediaRecorderRef.current.stop();
@@ -368,7 +368,11 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
           recorder.onstop = async () => {
             const audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
-            await handleSSEQuery(audioBlob);
+            if (voiceMethod === 'sse') {
+              await handleSSEQuery(audioBlob);
+            } else {
+              await handleRESTVoiceQuery(audioBlob);
+            }
           };
 
           setIsRecording(true);
@@ -464,6 +468,67 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
     }
   };
 
+  // Perform REST voice query with Blob (Option B)
+  const handleRESTVoiceQuery = async (audioBlob: Blob) => {
+    setIsTyping(true);
+    cleanupAudio();
+
+    const tempUserMsgId = `user-rest-${Date.now()}`;
+    const tempBotMsgId = `bot-rest-${Date.now()}`;
+
+    setMessages(prev => [
+      ...prev,
+      {
+        id: tempUserMsgId,
+        sender: 'user',
+        text: 'Transcribing speech...',
+        lang: language,
+      },
+      {
+        id: tempBotMsgId,
+        sender: 'bot',
+        text: 'Querying backend...',
+        isLoading: true,
+      }
+    ]);
+
+    try {
+      const res = await submitVoiceQuery(
+        audioBlob,
+        bank.slug,
+        language,
+        voiceGender
+      );
+
+      setIsTyping(false);
+      
+      setMessages(prev => prev.map(m => {
+        if (m.id === tempUserMsgId) {
+          return { ...m, text: res.transcript || 'Speech processed.', lang: res.language };
+        }
+        if (m.id === tempBotMsgId) {
+          return {
+            ...m,
+            text: res.answer,
+            audioBlobUrl: res.audioBlobUrl,
+            sources: res.sources,
+            isLoading: false,
+          };
+        }
+        return m;
+      }));
+
+      playAudio(tempBotMsgId, res.audioBlobUrl);
+    } catch (err: any) {
+      setIsTyping(false);
+      setMessages(prev => prev.map(m => m.id === tempBotMsgId ? {
+        ...m,
+        text: `REST query error: ${err.message}`,
+        isLoading: false,
+      } : m));
+    }
+  };
+
   return (
     <div className="chat-panel themed-bank">
       {/* Panel Header */}
@@ -534,8 +599,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           {chatMode === 'voice' && (
             <div className="control-group">
               <label>API Protocol</label>
-              <select value={voiceMethod} onChange={(e) => handleVoiceMethodChange(e.target.value as 'sse' | 'ws')}>
+              <select value={voiceMethod} onChange={(e) => handleVoiceMethodChange(e.target.value as 'sse' | 'ws' | 'rest')}>
                 <option value="sse">SSE Stream</option>
+                <option value="rest">Simple REST</option>
                 <option value="ws">Real-Time WS</option>
               </select>
             </div>

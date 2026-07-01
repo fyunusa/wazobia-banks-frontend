@@ -248,3 +248,63 @@ export async function streamVoiceQuery(
     }
   }
 }
+
+export async function submitVoiceQuery(
+  audioBlob: Blob,
+  institutionSlug: string,
+  preferredLanguage: string,
+  gender: string
+): Promise<{
+  transcript: string;
+  answer: string;
+  language: string;
+  sources: Array<{ text: string; source_url?: string }>;
+  audioBlobUrl: string;
+}> {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'query.wav');
+  formData.append('institution_slug', institutionSlug);
+  formData.append('preferred_language', preferredLanguage);
+  formData.append('gender', gender);
+
+  const response = await fetch(`${API_BASE_URL}/v1/voice/query`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to submit voice query');
+  }
+
+  // Option B returns the audio/wav bytes in response body,
+  // and metadata as headers: X-Transcript, X-Answer, X-Language, X-Sources
+  const audioBlobData = await response.blob();
+  const audioBlobUrl = URL.createObjectURL(audioBlobData);
+
+  const transcript = response.headers.get('X-Transcript') || '';
+  const answer = response.headers.get('X-Answer') || '';
+  const language = response.headers.get('X-Language') || '';
+  
+  let sources: Array<{ text: string; source_url?: string }> = [];
+  const sourcesHeader = response.headers.get('X-Sources');
+  if (sourcesHeader) {
+    try {
+      const parsedUrls: string[] = JSON.parse(sourcesHeader);
+      sources = parsedUrls.map(url => ({
+        text: 'Document source',
+        source_url: url
+      }));
+    } catch (e) {
+      console.warn("Failed to parse X-Sources header", e);
+    }
+  }
+
+  return {
+    transcript,
+    answer,
+    language,
+    sources,
+    audioBlobUrl,
+  };
+}
