@@ -291,8 +291,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         .admin-modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.7);
-          backdrop-filter: blur(8px);
+          background: rgba(8, 10, 15, 0.85);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -308,10 +307,11 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         .admin-modal {
           width: 500px;
           max-width: 90%;
-          border-radius: 24px;
+          border-radius: 12px;
           overflow: hidden;
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: var(--bg-card);
+          box-shadow: var(--shadow-premium);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -322,11 +322,11 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .modal-header {
           padding: 20px 24px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(13, 17, 34, 0.4);
+          background: var(--bg-dark);
         }
 
         .title-row {
@@ -340,7 +340,8 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .modal-header h2 {
-          font-size: 16px;
+          font-size: 15px;
+          font-family: var(--font-display);
           color: #fff;
           letter-spacing: 0.05em;
         }
@@ -361,10 +362,10 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .form-group label {
-          font-size: 11px;
+          font-size: 10px;
           text-transform: uppercase;
           color: var(--text-muted);
-          font-weight: 600;
+          font-weight: 700;
           letter-spacing: 0.05em;
         }
 
@@ -376,8 +377,8 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .input-wrapper input {
           width: 100%;
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: #fff;
           padding: 10px 40px 10px 12px;
           border-radius: 8px;
@@ -392,8 +393,8 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .form-group select {
-          background: rgba(0, 0, 0, 0.3);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: #fff;
           padding: 10px 12px;
           border-radius: 8px;
@@ -402,9 +403,9 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .dropzone {
-          border: 2px dashed rgba(99, 102, 241, 0.25);
-          background: rgba(99, 102, 241, 0.02);
-          border-radius: 12px;
+          border: 2.5px dashed rgba(197, 168, 128, 0.25);
+          background: rgba(197, 168, 128, 0.015);
+          border-radius: 8px;
           padding: 32px 16px;
           text-align: center;
           cursor: pointer;
@@ -416,18 +417,17 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .dropzone:hover {
           border-color: var(--color-primary);
-          background: rgba(99, 102, 241, 0.05);
+          background: rgba(197, 168, 128, 0.04);
         }
 
         .drop-icon {
           color: var(--color-primary);
           margin-bottom: 12px;
-          animation: pulse-ring 2.5s infinite;
         }
 
         .drop-prompt {
           font-size: 13px;
-          font-weight: 500;
+          font-weight: 700;
           color: #fff;
           margin-bottom: 4px;
         }
@@ -466,7 +466,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(255, 255, 255, 0.02);
+          background: rgba(255, 255, 255, 0.015);
           padding: 6px 10px;
           border-radius: 6px;
         }
@@ -499,14 +499,14 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .file-remove-btn:hover {
-          color: #ef4444;
+          color: var(--color-accent);
         }
 
         .submit-btn {
           width: 100%;
           background: var(--color-primary);
-          color: #fff;
-          font-weight: 600;
+          color: var(--bg-deep);
+          font-weight: 700;
           font-size: 14px;
           padding: 12px;
           border-radius: 8px;
@@ -514,19 +514,17 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           align-items: center;
           justify-content: center;
           gap: 8px;
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
           transition: all 0.2s;
         }
 
         .submit-btn:hover:not(:disabled) {
-          background: var(--color-accent);
-          box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+          background: #ebdcb9;
+          transform: translateY(-1px);
         }
 
         .submit-btn:disabled {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.03);
           color: var(--text-muted);
-          box-shadow: none;
           cursor: not-allowed;
         }
 
@@ -551,16 +549,15 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .status-icon-large.success {
           color: #10b981;
-          filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.3));
         }
 
         .status-icon-large.failure {
-          color: #ef4444;
-          filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.3));
+          color: var(--color-accent);
         }
 
         .status-box h3 {
-          font-size: 18px;
+          font-size: 17px;
+          font-family: var(--font-display);
           color: #fff;
         }
 
@@ -570,7 +567,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .status-label code {
-          background: rgba(0, 0, 0, 0.3);
+          background: rgba(0, 0, 0, 0.2);
           padding: 2px 6px;
           border-radius: 4px;
           font-size: 11px;
@@ -587,12 +584,12 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: rgba(99, 102, 241, 0.1);
-          border: 1px solid rgba(99, 102, 241, 0.2);
+          background: rgba(197, 168, 128, 0.08);
+          border: 1px solid rgba(197, 168, 128, 0.2);
           padding: 6px 14px;
           border-radius: 9999px;
           font-size: 11px;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--color-primary);
         }
 
@@ -613,9 +610,9 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .stat-card {
           flex: 1;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.04);
-          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.015);
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          border-radius: 8px;
           padding: 12px 6px;
           display: flex;
           flex-direction: column;
@@ -630,15 +627,15 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         }
 
         .stat-name {
-          font-size: 10px;
+          font-size: 9px;
           text-transform: uppercase;
           color: var(--text-muted);
-          font-weight: 600;
+          font-weight: 700;
         }
 
         .error-card {
-          background: rgba(239, 68, 68, 0.05);
-          border: 1px solid rgba(239, 68, 68, 0.15);
+          background: rgba(194, 89, 63, 0.05);
+          border: 1px solid rgba(194, 89, 63, 0.15);
           border-radius: 8px;
           padding: 12px;
           font-family: var(--font-mono);
@@ -650,19 +647,19 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
         .reset-btn {
           margin-top: 12px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: #fff;
           padding: 8px 16px;
           border-radius: 8px;
           font-size: 13px;
-          font-weight: 600;
+          font-weight: 700;
           transition: all 0.2s;
         }
 
         .reset-btn:hover {
-          background: rgba(255, 255, 255, 0.15);
-          border-color: rgba(255, 255, 255, 0.2);
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.15);
         }
       `}</style>
     </div>

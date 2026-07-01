@@ -300,37 +300,31 @@ function App() {
           height: 100vh;
           position: relative;
           overflow: hidden;
-          background: #030408;
+          background: var(--bg-deep);
           font-family: var(--font-sans);
         }
 
         .grid-overlay {
-          position: absolute;
-          inset: 0;
-          background-image: 
-            linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
-          background-size: 50px 50px;
-          background-position: center;
-          pointer-events: none;
-          z-index: 1;
+          display: none;
         }
 
         .hud-header {
           position: absolute;
-          top: 20px;
+          top: 24px;
           left: 50%;
           transform: translateX(-50%);
-          width: 500px;
+          width: 520px;
           max-width: calc(100% - 40px);
-          padding: 14px 20px;
-          border-radius: 20px;
+          padding: 16px 24px;
+          border-radius: 12px;
           z-index: 10;
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 4px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+          gap: 6px;
+          background: var(--bg-card);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          box-shadow: var(--shadow-premium);
           text-align: center;
         }
 
@@ -348,24 +342,23 @@ function App() {
         }
 
         .logo-spark {
-          color: var(--color-accent);
-          animation: spin 6s linear infinite;
+          color: var(--color-primary);
         }
 
         .hud-header h1 {
-          font-size: 18px;
+          font-size: 19px;
           margin: 0;
-          font-weight: 800;
-          letter-spacing: 0.08em;
+          font-weight: 700;
+          letter-spacing: 0.05em;
         }
 
         .badge {
           font-size: 9px;
-          background: var(--color-primary-glow);
+          background: rgba(197, 168, 128, 0.1);
           color: var(--color-primary);
-          border: 1px solid var(--border-glow);
+          border: 1px solid rgba(197, 168, 128, 0.2);
           padding: 2px 6px;
-          border-radius: 9999px;
+          border-radius: 4px;
           font-weight: 700;
           font-family: var(--font-mono);
         }
@@ -375,9 +368,9 @@ function App() {
           align-items: center;
           gap: 6px;
           padding: 6px 12px;
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           color: var(--text-secondary);
           font-size: 10px;
           font-weight: 700;
@@ -387,8 +380,8 @@ function App() {
 
         .admin-portal-btn:hover {
           color: #fff;
-          background: var(--color-primary-glow);
-          border-color: rgba(99, 102, 241, 0.3);
+          background: rgba(197, 168, 128, 0.1);
+          border-color: var(--color-primary);
         }
 
         .subtitle {
@@ -408,28 +401,26 @@ function App() {
 
         .guide-hud {
           position: absolute;
-          bottom: 120px;
+          bottom: 124px;
           left: 50%;
           transform: translateX(-50%);
           z-index: 10;
           display: flex;
           align-items: center;
           gap: 8px;
-          background: rgba(10, 12, 22, 0.65);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: var(--bg-card);
+          border: 1px solid rgba(255, 255, 255, 0.04);
           padding: 8px 18px;
-          border-radius: 9999px;
+          border-radius: 8px;
           font-size: 10px;
           letter-spacing: 0.05em;
-          color: var(--text-secondary);
+          color: var(--color-primary);
           font-family: var(--font-mono);
-          backdrop-filter: blur(8px);
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+          box-shadow: var(--shadow-premium);
         }
 
         .guide-icon {
           color: var(--color-primary);
-          animation: pulse-ring 2s infinite;
         }
 
         /* Bottom dock layout replacing left sidebar */
@@ -440,14 +431,15 @@ function App() {
           transform: translateX(-50%);
           width: 85%;
           max-width: 900px;
-          border-radius: 24px;
+          border-radius: 12px;
           z-index: 10;
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 10px;
           padding: 12px 20px;
-          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+          background: var(--bg-card);
+          box-shadow: var(--shadow-premium);
           border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -462,14 +454,13 @@ function App() {
 
         .dock-items-wrapper {
           display: flex;
-          gap: 10px;
+          gap: 8px;
           overflow-x: auto;
           width: 100%;
           padding-bottom: 4px;
           justify-content: flex-start;
         }
         
-        /* Hide scrollbars for chrome/safari */
         .dock-items-wrapper::-webkit-scrollbar {
           display: none;
         }
@@ -478,9 +469,9 @@ function App() {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 6px 14px;
-          border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.02);
+          padding: 6px 12px;
+          border-radius: 8px;
+          background: rgba(255, 255, 255, 0.015);
           border: 1px solid rgba(255, 255, 255, 0.03);
           color: var(--text-secondary);
           font-size: 11px;
@@ -490,16 +481,16 @@ function App() {
         }
 
         .dock-item:hover {
-          transform: scale(1.08) translateY(-1px);
-          background: rgba(255, 255, 255, 0.05);
+          transform: translateY(-1px);
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.15);
           color: #fff;
         }
 
         .dock-item.active {
-          background: rgba(99, 102, 241, 0.15);
-          border-color: rgba(99, 102, 241, 0.35);
+          background: var(--bg-glass);
+          border-color: var(--color-primary);
           color: #fff;
-          box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
         }
 
         .dock-dot {

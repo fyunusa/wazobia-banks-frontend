@@ -1,28 +1,36 @@
-@import url('https://hangeul.pstatic.net/hangeul_static/css/nanum-square-round.css');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Nanum+Gothic+Coding:wght@400;700&display=swap');
+
+@font-face {
+    font-family: 'JejuStoneWall';
+    src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-EF@1.0/EF_jejudoldam.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
 
 :root {
-  --bg-deep: #05060b;
-  --bg-dark: #0a0c16;
-  --bg-card: rgba(13, 17, 34, 0.65);
-  --bg-glass: rgba(10, 12, 22, 0.45);
+  --bg-deep: #0e0f12;          /* Solid dark gallery slate */
+  --bg-dark: #131418;          /* Solid deep charcoal */
+  --bg-card: #18191d;          /* Solid dark clay panels (no transparency) */
+  --bg-glass: #1e2025;         /* Solid panel highlight */
   
-  --text-primary: #f3f4f6;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
+  --text-primary: #f5f4f0;      /* Silk white/cream */
+  --text-secondary: #9c9a94;    /* Muted stone grey */
+  --text-muted: #6b6963;        /* Dark stone grey */
   
-  --color-primary: #6366f1;
-  --color-primary-glow: rgba(99, 102, 241, 0.15);
-  --color-accent: #a855f7;
-  --color-accent-glow: rgba(168, 85, 247, 0.15);
+  --color-primary: #c5a880;     /* Premium Gold/Sand accent */
+  --color-primary-glow: rgba(197, 168, 128, 0.08);
+  --color-accent: #c2593f;      /* Terracotta / Rust */
+  --color-accent-glow: rgba(194, 89, 63, 0.08);
   
   --border-glass: rgba(255, 255, 255, 0.06);
-  --border-glow: rgba(99, 102, 241, 0.3);
+  --border-glow: rgba(197, 168, 128, 0.2);
   
-  --font-sans: 'NanumSquareRound', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'NanumSquareRound', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-display: 'JejuStoneWall', serif;
+  --font-mono: 'Nanum Gothic Coding', monospace;
   
-  --shadow-neon: 0 0 15px rgba(99, 102, 241, 0.25), 0 0 30px rgba(99, 102, 241, 0.15);
-  --shadow-neon-accent: 0 0 15px rgba(168, 85, 247, 0.25), 0 0 30px rgba(168, 85, 247, 0.15);
+  --shadow-premium: 0 16px 40px rgba(0, 0, 0, 0.45);
   
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -47,20 +55,21 @@ html, body {
   letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars - Sand Gold / Grey */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(10, 12, 22, 0.3);
+  background: var(--bg-deep);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
+  background: var(--color-primary-glow);
   border-radius: 9999px;
-  transition: background 0.3s ease;
+  border: 1px solid rgba(197, 168, 128, 0.15);
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -73,30 +82,19 @@ html, body {
   position: relative;
   overflow: hidden;
   display: flex;
-  background: radial-gradient(circle at 50% 50%, #111428 0%, var(--bg-deep) 70%);
+  background: var(--bg-deep);
 }
 
 /* Animations */
 @keyframes float-slow {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-10px) rotate(1deg); }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
 }
 
 @keyframes pulse-ring {
   0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.05); opacity: 0.4; }
+  50% { transform: scale(1.03); opacity: 0.4; }
   100% { transform: scale(0.95); opacity: 0.8; }
-}
-
-@keyframes glow-border {
-  0%, 100% { border-color: rgba(99, 102, 241, 0.2); }
-  50% { border-color: rgba(168, 85, 247, 0.6); }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 @keyframes sound-wave-bar {
@@ -104,42 +102,36 @@ html, body {
   50% { transform: scaleY(1); }
 }
 
-/* Utility Glassmorphism Classes */
+/* Overhauled flat solid card panels (Replacing standard transparency) */
 .glass {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-glass);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow-premium);
 }
 
 .glass-interactive {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-glass);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .glass-interactive:hover {
-  background: rgba(18, 23, 44, 0.8);
-  border-color: rgba(99, 102, 241, 0.4);
-  box-shadow: var(--shadow-neon);
+  background: var(--bg-glass);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
 }
 
 .text-gradient {
-  background: linear-gradient(135deg, #a5b4fc 0%, #c084fc 50%, #818cf8 100%);
-  background-size: 200% 200%;
-  animation: gradient-shift 8s ease infinite;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--color-primary);
+  font-family: var(--font-display);
 }
 
 /* Global Styles for Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   margin: 0;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
 }
 
 button {
