@@ -8,10 +8,15 @@ import { AdminPortal } from './components/AdminPortal';
 import { fetchInstitutions } from './services/api';
 import { HelpCircle, ChevronRight, Sparkles, Settings } from 'lucide-react';
 
-const FALLBACK_BANKS: BankData[] = [
+interface RichBankData extends BankData {
+  acronym: string;
+}
+
+const FALLBACK_BANKS: RichBankData[] = [
   {
     slug: 'gtbank',
     name: 'GTBank',
+    acronym: 'GTB',
     full_name: 'Guaranty Trust Bank',
     brandColor: '#dd4f05',
     ussd: '*737#',
@@ -20,6 +25,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'zenith',
     name: 'Zenith Bank',
+    acronym: 'ZEN',
     full_name: 'Zenith Bank PLC',
     brandColor: '#d30007',
     ussd: '*966#',
@@ -28,6 +34,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'access',
     name: 'Access Bank',
+    acronym: 'ACC',
     full_name: 'Access Bank PLC',
     brandColor: '#00b0ff',
     ussd: '*901#',
@@ -36,6 +43,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'firstbank',
     name: 'FirstBank',
+    acronym: 'FBN',
     full_name: 'First Bank of Nigeria',
     brandColor: '#bf9b30',
     ussd: '*894#',
@@ -44,6 +52,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'uba',
     name: 'UBA',
+    acronym: 'UBA',
     full_name: 'United Bank for Africa',
     brandColor: '#e11d48',
     ussd: '*919#',
@@ -52,6 +61,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'union',
     name: 'Union Bank',
+    acronym: 'UBN',
     full_name: 'Union Bank of Nigeria',
     brandColor: '#009fe3',
     ussd: '*826#',
@@ -60,6 +70,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'sterling',
     name: 'Sterling Bank',
+    acronym: 'STB',
     full_name: 'Sterling Bank PLC',
     brandColor: '#e11d48',
     ussd: '*822#',
@@ -68,6 +79,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'wema',
     name: 'Wema Bank',
+    acronym: 'WMA',
     full_name: 'Wema Bank PLC',
     brandColor: '#8a1538',
     ussd: '*945#',
@@ -76,6 +88,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'fidelity',
     name: 'Fidelity Bank',
+    acronym: 'FID',
     full_name: 'Fidelity Bank PLC',
     brandColor: '#002d62',
     ussd: '*770#',
@@ -84,6 +97,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'fcmb',
     name: 'FCMB',
+    acronym: 'FCM',
     full_name: 'First City Monument Bank',
     brandColor: '#fbbf24',
     ussd: '*329#',
@@ -92,6 +106,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'stanbic',
     name: 'Stanbic IBTC',
+    acronym: 'SIB',
     full_name: 'Stanbic IBTC Bank',
     brandColor: '#0033a0',
     ussd: '*909#',
@@ -100,6 +115,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'opay',
     name: 'OPay',
+    acronym: 'OPY',
     full_name: 'OPay Digital Services',
     brandColor: '#00b074',
     ussd: '*955#',
@@ -108,6 +124,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'kuda',
     name: 'Kuda Bank',
+    acronym: 'KUD',
     full_name: 'Kuda Microfinance Bank',
     brandColor: '#40196d',
     ussd: '*894#',
@@ -116,6 +133,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'moniepoint',
     name: 'Moniepoint',
+    acronym: 'MNP',
     full_name: 'Moniepoint MFB',
     brandColor: '#0052cc',
     ussd: '*5573#',
@@ -124,6 +142,7 @@ const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'palmpay',
     name: 'PalmPay',
+    acronym: 'PLM',
     full_name: 'PalmPay Limited',
     brandColor: '#7c3aed',
     ussd: '*652#',
@@ -132,7 +151,7 @@ const FALLBACK_BANKS: BankData[] = [
 ];
 
 function App() {
-  const [banks, setBanks] = useState<BankData[]>(FALLBACK_BANKS);
+  const [banks, setBanks] = useState<RichBankData[]>(FALLBACK_BANKS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [carouselAngle, setCarouselAngle] = useState(0);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
@@ -146,6 +165,7 @@ function App() {
           return {
             slug: dyn.slug,
             name: dyn.name,
+            acronym: local?.acronym || dyn.name.substring(0, 3).toUpperCase(),
             full_name: dyn.full_name,
             brandColor: local?.brandColor || '#6366f1',
             ussd: dyn.ussd_code || local?.ussd || '*737#',
@@ -162,6 +182,32 @@ function App() {
   }, []);
 
   const selectedBank = banks.find((b) => b.slug === selectedSlug);
+
+  const getLicenseTypeClass = (license: string) => {
+    const l = license.toLowerCase();
+    if (l.includes('commercial') || l.includes('merchant')) return 'commercial';
+    if (l.includes('fintech') || l.includes('microfinance')) return 'fintech';
+    return 'mmo';
+  };
+
+  const getLicenseShort = (license: string) => {
+    const l = license.toLowerCase();
+    if (l.includes('commercial')) return 'COMM';
+    if (l.includes('microfinance')) return 'MFB';
+    if (l.includes('fintech')) return 'FINTECH';
+    if (l.includes('money')) return 'MMO';
+    return 'BANK';
+  };
+
+  // Convert Hex color to semi-transparent version for background glow
+  const getGlowColor = (hex: string) => {
+    // Simple hex to rgba conversion
+    const c = hex.replace('#', '');
+    const r = parseInt(c.substring(0, 2), 16);
+    const g = parseInt(c.substring(2, 4), 16);
+    const b = parseInt(c.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, 0.12)`;
+  };
 
   return (
     <div className="dashboard-container">
@@ -200,15 +246,34 @@ function App() {
               key={b.slug}
               className={`sidebar-item glass-interactive ${selectedSlug === b.slug ? 'active' : ''}`}
               style={{
-                borderLeft: selectedSlug === b.slug ? `4px solid ${b.brandColor}` : undefined
-              }}
+                '--active-brand-color': b.brandColor,
+                '--active-brand-color-glow': getGlowColor(b.brandColor),
+                borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined
+              } as React.CSSProperties}
               onClick={() => setSelectedSlug(b.slug)}
             >
-              <div className="item-meta">
-                <span className="dot" style={{ backgroundColor: b.brandColor }} />
-                <span className="item-name">{b.name}</span>
+              {/* Radial background glow on active */}
+              <div className="active-glow" />
+              
+              {/* Neon line indicator */}
+              <div className="sidebar-item-brand-line" style={{ backgroundColor: b.brandColor }} />
+
+              <div className="item-header-row">
+                <span className="acronym-badge">{b.acronym}</span>
+                <span className={`license-pill ${getLicenseTypeClass(b.license)}`}>
+                  {getLicenseShort(b.license)}
+                </span>
               </div>
-              <ChevronRight size={14} className="arrow" />
+
+              <div className="item-body">
+                <span className="circle-indicator" style={{ backgroundColor: b.brandColor }} />
+                <span className="item-title-name">{b.name}</span>
+              </div>
+
+              <div className="item-footer-row">
+                <span className="ussd-label">{b.ussd}</span>
+                <ChevronRight size={12} className="arrow" />
+              </div>
             </button>
           ))}
         </div>
@@ -366,28 +431,35 @@ function App() {
           left: 16px;
           top: 104px;
           bottom: 16px;
-          width: 260px;
-          border-radius: 20px;
+          width: 280px;
+          background: rgba(8, 10, 20, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-radius: 24px;
           z-index: 10;
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
         }
 
         .sidebar-title {
-          padding: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 18px 20px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.04);
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(13, 17, 34, 0.4);
+          background: rgba(13, 17, 34, 0.2);
         }
 
         .sidebar-title h2 {
-          font-size: 14px;
-          color: #fff;
-          letter-spacing: 0.05em;
+          font-size: 12px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: var(--text-muted);
+          font-family: var(--font-mono);
+          font-weight: 700;
         }
 
         .count-label {
@@ -399,60 +471,163 @@ function App() {
         .sidebar-list {
           flex: 1;
           overflow-y: auto;
-          padding: 12px;
+          padding: 16px 14px;
           display: flex;
           flex-direction: column;
-          gap: 8px;
+          gap: 12px;
         }
 
         .sidebar-item {
+          position: relative;
+          background: rgba(255, 255, 255, 0.015);
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          border-radius: 16px;
+          padding: 12px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          text-align: left;
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          overflow: hidden;
+        }
+
+        .sidebar-item:hover {
+          transform: translateY(-2px);
+          background: rgba(255, 255, 255, 0.04);
+          border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar-item.active {
+          background: rgba(13, 17, 34, 0.75);
+          border-color: rgba(99, 102, 241, 0.15);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-item-brand-line {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          opacity: 0.15;
+          transition: opacity 0.3s;
+        }
+
+        .sidebar-item.active .sidebar-item-brand-line {
+          opacity: 1;
+        }
+
+        .active-glow {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 100% 50%, var(--active-brand-color-glow) 0%, transparent 60%);
+          opacity: 0;
+          transition: opacity 0.3s;
+          pointer-events: none;
+        }
+
+        .sidebar-item.active .active-glow {
+          opacity: 1;
+        }
+
+        .item-header-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 10px 14px;
-          border-radius: 12px;
-          text-align: left;
-          background: rgba(255, 255, 255, 0.02);
+          width: 100%;
+          z-index: 2;
+        }
+
+        .acronym-badge {
+          font-family: var(--font-mono);
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 5px;
+          border-radius: 4px;
+          color: #fff;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .license-pill {
+          font-family: var(--font-mono);
+          font-size: 8px;
+          font-weight: 700;
+          padding: 1px 5px;
+          border-radius: 4px;
+        }
+
+        .license-pill.commercial {
+          background: rgba(59, 130, 246, 0.1);
+          color: #60a5fa;
+          border: 1px solid rgba(59, 130, 246, 0.15);
+        }
+
+        .license-pill.fintech {
+          background: rgba(168, 85, 247, 0.1);
+          color: #c084fc;
+          border: 1px solid rgba(168, 85, 247, 0.15);
+        }
+
+        .license-pill.mmo {
+          background: rgba(16, 185, 129, 0.1);
+          color: #34d399;
+          border: 1px solid rgba(16, 185, 129, 0.15);
+        }
+
+        .item-body {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 2px;
+          z-index: 2;
+        }
+
+        .circle-indicator {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
           transition: all 0.3s;
         }
 
-        .sidebar-item .dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          display: inline-block;
+        .sidebar-item.active .circle-indicator {
+          transform: scale(1.4);
         }
 
-        .sidebar-item .item-meta {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .sidebar-item .item-name {
-          font-size: 13px;
-          font-weight: 500;
+        .item-title-name {
+          font-size: 14px;
+          font-weight: 700;
           color: var(--text-secondary);
           transition: color 0.3s;
         }
 
-        .sidebar-item:hover .item-name {
+        .sidebar-item:hover .item-title-name,
+        .sidebar-item.active .item-title-name {
           color: #fff;
         }
 
-        .sidebar-item.active {
-          background: rgba(255, 255, 255, 0.05);
-          box-shadow: var(--shadow-neon);
+        .item-footer-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
+          z-index: 2;
         }
 
-        .sidebar-item.active .item-name {
-          color: #fff;
-          font-weight: 600;
+        .ussd-label {
+          font-size: 11px;
+          font-family: var(--font-mono);
+          color: var(--text-muted);
+        }
+
+        .sidebar-item:hover .ussd-label,
+        .sidebar-item.active .ussd-label {
+          color: var(--text-secondary);
         }
 
         .sidebar-item .arrow {
           color: var(--text-muted);
-          opacity: 0;
+          opacity: 0.3;
           transform: translateX(-4px);
           transition: all 0.3s;
         }
