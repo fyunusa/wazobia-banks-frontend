@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://hangeul.pstatic.net/hangeul_static/css/nanum-square-round.css');
 
 :root {
   --bg-deep: #05060b;
@@ -18,8 +18,8 @@
   --border-glass: rgba(255, 255, 255, 0.06);
   --border-glow: rgba(99, 102, 241, 0.3);
   
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Space Grotesk', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: 'NanumSquareRound', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'NanumSquareRound', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   
   --shadow-neon: 0 0 15px rgba(99, 102, 241, 0.25), 0 0 30px rgba(99, 102, 241, 0.15);
   --shadow-neon-accent: 0 0 15px rgba(168, 85, 247, 0.25), 0 0 30px rgba(168, 85, 247, 0.15);
