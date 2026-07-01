@@ -465,16 +465,16 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
   };
 
   return (
-    <div className="chat-panel glass">
+    <div className="chat-panel themed-bank">
       {/* Panel Header */}
-      <div className="chat-header">
+      <div className="chat-header" style={{ backgroundColor: bank.brandColor }}>
         <div className="header-info">
-          <div className="bank-avatar" style={{ backgroundColor: bank.brandColor, boxShadow: `0 0 16px ${bank.brandColor}` }}>
+          <div className="bank-avatar" style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', border: '1.5px solid rgba(255, 255, 255, 0.4)' }}>
             {bank.name.substring(0, 2).toUpperCase()}
           </div>
           <div>
-            <h3>{bank.name} Assistant</h3>
-            <p className="license-text">{bank.license}</p>
+            <h3 style={{ color: '#ffffff' }}>{bank.name} Assistant</h3>
+            <p className="license-text" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{bank.license}</p>
           </div>
         </div>
         <button className="close-btn" onClick={onClose}>
@@ -487,12 +487,22 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         <div className="mode-tabs">
           <button 
             className={`tab-btn ${chatMode === 'text' ? 'active' : ''}`}
+            style={{
+              backgroundColor: chatMode === 'text' ? bank.brandColor : undefined,
+              color: chatMode === 'text' ? '#ffffff' : undefined,
+              boxShadow: chatMode === 'text' ? `0 2px 10px ${bank.brandColor}44` : undefined
+            }}
             onClick={() => handleToggleChatMode('text')}
           >
             Keyboard Link
           </button>
           <button 
             className={`tab-btn ${chatMode === 'voice' ? 'active' : ''}`}
+            style={{
+              backgroundColor: chatMode === 'voice' ? bank.brandColor : undefined,
+              color: chatMode === 'voice' ? '#ffffff' : undefined,
+              boxShadow: chatMode === 'voice' ? `0 2px 10px ${bank.brandColor}44` : undefined
+            }}
             onClick={() => handleToggleChatMode('voice')}
           >
             Vocal Vector
@@ -538,26 +548,28 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         {messages.map((msg) => (
           <div key={msg.id} className={`message-wrapper ${msg.sender}`}>
             <div className={`message-bubble ${msg.sender}`} style={{
-              borderLeft: msg.sender === 'bot' ? `3px solid ${bank.brandColor}` : undefined
+              borderLeft: msg.sender === 'bot' ? `3px solid ${bank.brandColor}` : undefined,
+              background: msg.sender === 'user' ? `linear-gradient(135deg, ${bank.brandColor}ee 0%, ${bank.brandColor}bb 100%)` : undefined,
+              boxShadow: msg.sender === 'user' ? `0 6px 15px ${bank.brandColor}22` : undefined
             }}>
               <p>{msg.text}</p>
               
-              {/* Play Audio Button for Bot responses */}
+              {/* Play Audio Button */}
               {msg.sender === 'bot' && (msg.audioUrl || msg.audioBlobUrl) && (
                 <button 
                   className={`audio-play-btn ${playingAudioId === msg.id ? 'playing' : ''}`}
                   onClick={() => playAudio(msg.id, msg.audioBlobUrl || msg.audioUrl || '')}
                 >
-                  {playingAudioId === msg.id ? <Square size={12} fill="#fff" /> : <Play size={12} fill="#fff" />}
+                  {playingAudioId === msg.id ? <Square size={12} fill="#fff" /> : <Play size={12} fill="#334155" />}
                   <span>{playingAudioId === msg.id ? "HALT VOICE" : "LISTEN VOICE"}</span>
                 </button>
               )}
 
-              {/* Loader for loading status */}
+              {/* Loader */}
               {msg.isLoading && (
                 <div className="message-loader">
                   <Loader className="spinner" size={12} />
-                  <span>Streaming synthesized audio...</span>
+                  <span>Streaming response...</span>
                 </div>
               )}
             </div>
@@ -626,7 +638,13 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
               onChange={(e) => setInputText(e.target.value)}
               disabled={isTyping}
             />
-            <button type="submit" disabled={!inputText.trim() || isTyping}>
+            <button 
+              type="submit" 
+              disabled={!inputText.trim() || isTyping}
+              style={{
+                backgroundColor: !inputText.trim() || isTyping ? undefined : bank.brandColor,
+              }}
+            >
               <Send size={16} />
             </button>
           </form>
@@ -676,7 +694,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
       {/* Custom CSS specific to ChatPanel */}
       <style>{`
-        .chat-panel {
+        .chat-panel.themed-bank {
           width: 440px;
           height: calc(100% - 40px);
           position: absolute;
@@ -687,8 +705,10 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           flex-direction: column;
           z-index: 100;
           overflow: hidden;
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+          color: #1e293b;
           animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -699,11 +719,10 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .chat-header {
           padding: 18px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(13, 17, 34, 0.45);
+          color: #ffffff;
         }
 
         .header-info {
@@ -723,21 +742,18 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           font-family: var(--font-mono);
           font-size: 16px;
           color: #fff;
-          border: 1.5px solid rgba(255, 255, 255, 0.15);
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
         }
 
         .license-text {
           font-size: 10px;
-          color: var(--text-secondary);
           font-family: var(--font-mono);
           font-weight: 600;
           letter-spacing: 0.03em;
         }
 
         .close-btn {
-          background: rgba(255, 255, 255, 0.03);
-          color: var(--text-secondary);
+          background: rgba(255, 255, 255, 0.15);
+          color: #ffffff;
           width: 30px;
           height: 30px;
           border-radius: 50%;
@@ -745,28 +761,27 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           align-items: center;
           justify-content: center;
           transition: all 0.3s;
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          border: none;
         }
 
         .close-btn:hover {
-          background: rgba(255, 255, 255, 0.15);
-          color: #fff;
-          box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.3);
+          box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
         .chat-controls {
           padding: 12px 20px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-          background: rgba(5, 6, 11, 0.4);
+          border-bottom: 1px solid #f1f5f9;
+          background: #f8fafc;
         }
 
         .mode-tabs {
           display: flex;
-          background: rgba(0, 0, 0, 0.3);
+          background: #e2e8f0;
           border-radius: 8px;
           padding: 2px;
           margin-bottom: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.04);
+          border: 1px solid #cbd5e1;
         }
 
         .tab-btn {
@@ -776,7 +791,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           font-size: 11px;
           font-weight: 700;
           background: transparent;
-          color: var(--text-secondary);
+          color: #64748b;
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
           text-transform: uppercase;
           font-family: var(--font-mono);
@@ -784,9 +799,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
 
         .tab-btn.active {
-          background: var(--color-primary);
           color: #fff;
-          box-shadow: 0 2px 10px rgba(99, 102, 241, 0.45);
         }
 
         .dropdowns-row {
@@ -804,15 +817,15 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         .control-group label {
           font-size: 9px;
           text-transform: uppercase;
-          color: var(--text-muted);
+          color: #64748b;
           font-weight: 700;
           letter-spacing: 0.05em;
         }
 
         .control-group select {
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: var(--text-primary);
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
+          color: #1e293b;
           padding: 8px;
           border-radius: 8px;
           font-size: 12px;
@@ -826,6 +839,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           display: flex;
           flex-direction: column;
           gap: 16px;
+          background: #f8fafc;
         }
 
         .message-wrapper {
@@ -852,19 +866,17 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
 
         .message-bubble.user {
-          background: linear-gradient(135deg, hsla(239, 84%, 67%, 0.8) 0%, hsla(272, 88%, 68%, 0.8) 100%);
-          color: #fff;
+          color: #ffffff;
           border-bottom-right-radius: 4px;
-          box-shadow: 0 6px 15px rgba(99, 102, 241, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .message-bubble.bot {
-          background: rgba(255, 255, 255, 0.03);
-          color: var(--text-primary);
+          background: #ffffff;
+          color: #334155;
           border-bottom-left-radius: 4px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
         .message-bubble.bot.typing {
@@ -876,7 +888,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         .message-bubble.bot.typing .dot {
           width: 6px;
           height: 6px;
-          background: var(--text-secondary);
+          background: #94a3b8;
           border-radius: 50%;
           animation: bounce 1.4s infinite ease-in-out both;
         }
@@ -891,9 +903,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .audio-play-btn {
           margin-top: 8px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #fff;
+          background: #f1f5f9;
+          border: 1px solid #e2e8f0;
+          color: #334155;
           font-size: 10px;
           font-weight: 700;
           padding: 5px 10px;
@@ -907,15 +919,15 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
 
         .audio-play-btn:hover {
-          background: var(--color-accent);
-          border-color: var(--color-accent);
-          box-shadow: var(--shadow-neon-accent);
+          background: #e2e8f0;
+          color: #0f172a;
         }
 
         .audio-play-btn.playing {
           background: #ef4444;
           border-color: #ef4444;
-          box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+          color: #ffffff;
+          box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
         }
 
         .message-loader {
@@ -924,7 +936,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           gap: 8px;
           margin-top: 8px;
           font-size: 11px;
-          color: var(--text-muted);
+          color: #94a3b8;
         }
 
         .spinner {
@@ -942,7 +954,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .citation-title {
           font-size: 9px;
-          color: var(--text-muted);
+          color: #94a3b8;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -959,20 +971,20 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           display: flex;
           align-items: center;
           gap: 6px;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
           border-radius: 6px;
           padding: 4px 8px;
           font-size: 10px;
-          color: var(--text-secondary);
+          color: #475569;
           text-decoration: none;
           transition: all 0.3s;
         }
 
         .citation-card:hover {
-          background: rgba(99, 102, 241, 0.1);
-          border-color: rgba(99, 102, 241, 0.3);
-          color: #fff;
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+          color: #0f172a;
           transform: translateY(-1px);
         }
 
@@ -982,11 +994,12 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .suggestions-box {
           padding: 0 20px 14px 20px;
+          background: #f8fafc;
         }
 
         .suggest-title {
           font-size: 11px;
-          color: var(--text-muted);
+          color: #94a3b8;
           margin-bottom: 6px;
           font-weight: 600;
         }
@@ -1001,9 +1014,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.05);
-          color: var(--text-secondary);
+          background: #ffffff;
+          border: 1px solid #e2e8f0;
+          color: #475569;
           padding: 8px 14px;
           border-radius: 8px;
           font-size: 12px;
@@ -1012,22 +1025,22 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
 
         .suggest-item:hover {
-          background: rgba(99, 102, 241, 0.06);
-          border-color: rgba(99, 102, 241, 0.3);
-          color: #fff;
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+          color: #0f172a;
           transform: translateX(4px);
         }
 
         .chat-input-area {
           padding: 20px;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          background: rgba(13, 17, 34, 0.45);
+          border-top: 1px solid #e2e8f0;
+          background: #ffffff;
         }
 
         .text-input-form {
           display: flex;
-          background: rgba(0, 0, 0, 0.4);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: #f8fafc;
+          border: 1px solid #cbd5e1;
           border-radius: 12px;
           padding: 4px;
         }
@@ -1036,7 +1049,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           flex: 1;
           background: transparent;
           border: none;
-          color: #fff;
+          color: #0f172a;
           padding: 10px 14px;
           font-size: 14px;
         }
@@ -1044,8 +1057,8 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         .text-input-form button {
           width: 38px;
           height: 38px;
-          background: var(--color-primary);
-          color: #fff;
+          background: #cbd5e1;
+          color: #ffffff;
           border-radius: 8px;
           display: flex;
           align-items: center;
@@ -1054,14 +1067,12 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         }
 
         .text-input-form button:hover:not(:disabled) {
-          background: var(--color-accent);
-          box-shadow: var(--shadow-neon-accent);
           transform: scale(1.03);
         }
 
         .text-input-form button:disabled {
-          background: rgba(255, 255, 255, 0.04);
-          color: var(--text-muted);
+          background: #e2e8f0;
+          color: #94a3b8;
           cursor: not-allowed;
         }
 
@@ -1075,9 +1086,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
         .waveform-box {
           width: 100%;
           height: 48px;
-          background: rgba(0, 0, 0, 0.3);
+          background: #f8fafc;
           border-radius: 10px;
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border: 1px solid #e2e8f0;
           overflow: hidden;
         }
 
@@ -1089,14 +1100,14 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .live-transcript {
           font-size: 12px;
-          color: #fff;
+          color: #334155;
           font-style: italic;
           line-height: 1.4;
         }
 
         .listening-prompt {
           font-size: 11px;
-          color: var(--text-muted);
+          color: #94a3b8;
           animation: pulse-ring 2s infinite;
           font-family: var(--font-mono);
         }
@@ -1117,7 +1128,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
           justify-content: center;
           color: #fff;
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          border: 2px solid rgba(255, 255, 255, 0.2);
+          border: 2px solid rgba(0, 0, 0, 0.05);
         }
 
         .mic-button:hover {
@@ -1126,7 +1137,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .mic-status-label {
           font-size: 9px;
-          color: var(--text-secondary);
+          color: #94a3b8;
           font-family: var(--font-mono);
           letter-spacing: 0.05em;
           text-transform: uppercase;

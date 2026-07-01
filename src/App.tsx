@@ -195,43 +195,66 @@ function App() {
       )}
 
       {/* Global Header HUD */}
-      <header className="hud-header glass">
+      <header className={`hud-header ${selectedBank ? 'themed-white' : 'glass'}`}>
         <div className="header-top-row">
           <div className="header-logo">
-            <Sparkles className="logo-spark" />
-            <h1 className="text-gradient">WAZOBIA AI</h1>
-            <span className="badge">RAG v1.0</span>
+            <Sparkles className="logo-spark" style={{ color: selectedBank ? selectedBank.brandColor : undefined }} />
+            <h1 className={selectedBank ? 'themed-text-title' : 'text-gradient'}>WAZOBIA AI</h1>
+            <span className="badge" style={{ 
+              backgroundColor: selectedBank ? `${selectedBank.brandColor}15` : undefined,
+              borderColor: selectedBank ? `${selectedBank.brandColor}33` : undefined,
+              color: selectedBank ? selectedBank.brandColor : undefined
+            }}>
+              RAG v1.0
+            </span>
           </div>
           
           <button 
-            className="admin-portal-btn glass-interactive"
+            className={`admin-portal-btn ${selectedBank ? 'themed-btn' : 'glass-interactive'}`}
+            style={{
+              borderColor: selectedBank ? `${selectedBank.brandColor}33` : undefined
+            }}
             onClick={() => setIsAdminOpen(true)}
           >
             <Settings size={13} className="settings-icon" />
             <span>Admin Portal</span>
           </button>
         </div>
-        <p className="subtitle">Nigeria's Interactive 3D Multilingual Banking Assistant</p>
+        <p className="subtitle" style={{ color: selectedBank ? '#64748b' : undefined }}>
+          Nigeria's Interactive 3D Multilingual Banking Assistant
+        </p>
       </header>
 
       {/* Left Sidebar List Navigation */}
-      <aside className="sidebar glass">
-        <div className="sidebar-title">
-          <h2>INSTITUTIONS</h2>
-          <span className="count-label">{banks.length} active</span>
+      <aside className={`sidebar ${selectedBank ? 'themed-white' : 'glass'}`}>
+        <div 
+          className="sidebar-title"
+          style={{
+            backgroundColor: selectedBank ? selectedBank.brandColor : undefined,
+            borderBottom: selectedBank ? `1px solid rgba(0, 0, 0, 0.05)` : undefined
+          }}
+        >
+          <h2 style={{ color: selectedBank ? '#fff' : undefined }}>INSTITUTIONS</h2>
+          <span 
+            className="count-label"
+            style={{ color: selectedBank ? 'rgba(255, 255, 255, 0.8)' : undefined }}
+          >
+            {banks.length} active
+          </span>
         </div>
         <div className="sidebar-list">
           {banks.map((b) => (
             <button
               key={b.slug}
-              className={`sidebar-item glass-interactive ${selectedSlug === b.slug ? 'active' : ''}`}
+              className={`sidebar-item ${selectedSlug === b.slug ? 'active' : ''} ${selectedBank ? 'themed-item' : 'glass-interactive'}`}
               style={{
-                borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined
+                borderLeft: selectedSlug === b.slug ? `3px solid ${b.brandColor}` : undefined,
+                backgroundColor: selectedSlug === b.slug ? (selectedBank ? `${b.brandColor}10` : undefined) : undefined,
               }}
               onClick={() => setSelectedSlug(b.slug)}
             >
               <div className="item-meta">
-                <span className="dot" style={{ backgroundColor: b.brandColor }} />
+                <span className="dot" style={{ backgroundColor: b.brandColor, boxShadow: `0 0 6px ${b.brandColor}` }} />
                 <span className="item-name">{b.name}</span>
               </div>
               <ChevronRight size={14} className="arrow" />
@@ -247,12 +270,12 @@ function App() {
           style={{ width: '100%', height: '100%' }}
         >
           {/* Lighting */}
-          <ambientLight intensity={0.8} />
-          <pointLight position={[10, 10, 10]} intensity={1.8} />
-          <directionalLight position={[-5, 5, 5]} intensity={1.0} />
+          <ambientLight intensity={0.9} />
+          <pointLight position={[10, 10, 10]} intensity={2.0} />
+          <directionalLight position={[-5, 5, 5]} intensity={1.2} />
 
-          {/* Star particles */}
-          <StarsBackground />
+          {/* Star particles (rendered only when no bank is selected for clean presentation) */}
+          {!selectedSlug && <StarsBackground />}
 
           {/* 3D Bank Carousel */}
           <BankCarousel3D
@@ -325,6 +348,20 @@ function App() {
           border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
+        .hud-header.themed-white {
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        .themed-text-title {
+          font-size: 18px;
+          margin: 0;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          color: #0f172a;
+        }
+
         .header-top-row {
           display: flex;
           justify-content: space-between;
@@ -384,7 +421,18 @@ function App() {
           font-family: var(--font-mono);
         }
 
-        .admin-portal-btn:hover {
+        .admin-portal-btn.themed-btn {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          color: #334155;
+        }
+
+        .admin-portal-btn.themed-btn:hover {
+          background: #f1f5f9;
+          color: #0f172a;
+        }
+
+        .admin-portal-btn:hover:not(.themed-btn) {
           color: #fff;
           background: var(--color-primary-glow);
           border-color: rgba(99, 102, 241, 0.35);
@@ -420,6 +468,12 @@ function App() {
           overflow: hidden;
           box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
           border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .sidebar.themed-white {
+          background: #ffffff;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .sidebar-title {
@@ -464,12 +518,30 @@ function App() {
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
+        .sidebar-item.themed-item {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+        }
+
+        .sidebar-item.themed-item:hover {
+          background: #f1f5f9;
+          transform: translateY(-1px);
+        }
+
+        .sidebar-item.themed-item .item-name {
+          color: #475569;
+        }
+
+        .sidebar-item.themed-item.active .item-name {
+          color: #0f172a;
+          font-weight: 700;
+        }
+
         .sidebar-item .dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
           display: inline-block;
-          box-shadow: 0 0 6px currentColor;
         }
 
         .sidebar-item .item-meta {
@@ -485,17 +557,17 @@ function App() {
           transition: color 0.3s;
         }
 
-        .sidebar-item:hover .item-name {
+        .sidebar-item:hover:not(.themed-item) .item-name {
           color: #fff;
         }
 
-        .sidebar-item.active {
+        .sidebar-item.active:not(.themed-item) {
           background: rgba(255, 255, 255, 0.04);
           box-shadow: var(--shadow-neon);
           border-color: rgba(99, 102, 241, 0.2);
         }
 
-        .sidebar-item.active .item-name {
+        .sidebar-item.active:not(.themed-item) .item-name {
           color: #fff;
           font-weight: 600;
         }
@@ -507,11 +579,20 @@ function App() {
           transition: all 0.3s;
         }
 
+        .sidebar-item.themed-item .arrow {
+          color: #cbd5e1;
+        }
+
         .sidebar-item:hover .arrow,
         .sidebar-item.active .arrow {
           opacity: 1;
           transform: translateX(0);
           color: #fff;
+        }
+
+        .sidebar-item.themed-item:hover .arrow,
+        .sidebar-item.themed-item.active .arrow {
+          color: #0f172a;
         }
 
         .canvas-wrapper {
@@ -525,7 +606,6 @@ function App() {
 
         .canvas-wrapper.shift-left {
           transform: translateX(-160px);
-          opacity: 0.08; /* Fade out star universe so the bank background shines */
         }
 
         .dynamic-bg-overlay {
@@ -533,7 +613,7 @@ function App() {
           inset: 0;
           background-size: cover;
           background-position: center;
-          opacity: 0.18; /* subtle background projection */
+          opacity: 0.95; /* clear background as requested */
           transition: opacity 0.8s ease-in-out;
           z-index: 1;
           pointer-events: none;
@@ -542,7 +622,7 @@ function App() {
 
         @keyframes fadeInBg {
           from { opacity: 0; }
-          to { opacity: 0.18; }
+          to { opacity: 0.95; }
         }
 
         .guide-hud {
