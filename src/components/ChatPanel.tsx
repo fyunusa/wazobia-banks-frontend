@@ -494,7 +494,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
             }}
             onClick={() => handleToggleChatMode('text')}
           >
-            Keyboard Link
+            Text Chat
           </button>
           <button 
             className={`tab-btn ${chatMode === 'voice' ? 'active' : ''}`}
@@ -505,7 +505,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
             }}
             onClick={() => handleToggleChatMode('voice')}
           >
-            Vocal Vector
+            Voice Assistant
           </button>
         </div>
 

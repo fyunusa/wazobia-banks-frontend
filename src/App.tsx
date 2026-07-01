@@ -6,7 +6,7 @@ import type { BankData } from './components/BankCarousel3D';
 import { ChatPanel } from './components/ChatPanel';
 import { AdminPortal } from './components/AdminPortal';
 import { fetchInstitutions } from './services/api';
-import { HelpCircle, ChevronRight, Sparkles, Settings } from 'lucide-react';
+import { HelpCircle, ChevronRight, Landmark, Settings } from 'lucide-react';
 
 const FALLBACK_BANKS: BankData[] = [
   {
@@ -198,15 +198,8 @@ function App() {
       <header className={`hud-header ${selectedBank ? 'themed-white' : 'glass'}`}>
         <div className="header-top-row">
           <div className="header-logo">
-            <Sparkles className="logo-spark" style={{ color: selectedBank ? selectedBank.brandColor : undefined }} />
-            <h1 className={selectedBank ? 'themed-text-title' : 'text-gradient'}>WAZOBIA AI</h1>
-            <span className="badge" style={{ 
-              backgroundColor: selectedBank ? `${selectedBank.brandColor}15` : undefined,
-              borderColor: selectedBank ? `${selectedBank.brandColor}33` : undefined,
-              color: selectedBank ? selectedBank.brandColor : undefined
-            }}>
-              RAG v1.0
-            </span>
+            <Landmark className="logo-spark" style={{ color: selectedBank ? selectedBank.brandColor : undefined }} />
+            <h1 className={selectedBank ? 'themed-text-title' : 'text-gradient'}>WAZOBIA BANKS</h1>
           </div>
           
           <button 
