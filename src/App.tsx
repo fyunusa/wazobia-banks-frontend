@@ -128,6 +128,22 @@ const FALLBACK_BANKS: BankData[] = [
     brandColor: '#7c3aed',
     ussd: '*652#',
     license: 'Mobile Money Operator'
+  },
+  {
+    slug: 'jaiz',
+    name: 'Jaiz Bank',
+    full_name: 'Jaiz Bank PLC',
+    brandColor: '#006633',
+    ussd: '*389*301#',
+    license: 'Non-Interest Bank'
+  },
+  {
+    slug: 'eco',
+    name: 'Eco Bank',
+    full_name: 'Ecobank Nigeria',
+    brandColor: '#005b82',
+    ussd: '*326#',
+    license: 'Commercial Bank'
   }
 ];
 
@@ -167,6 +183,16 @@ function App() {
     <div className="dashboard-container">
       {/* Dynamic Cyber Grid Background Overlay */}
       <div className="grid-overlay" />
+
+      {/* Dynamic Holographic Bank Background Image */}
+      {selectedSlug && (
+        <div 
+          className="dynamic-bg-overlay"
+          style={{
+            backgroundImage: `url(/backgrounds/${selectedSlug === 'gtbank' ? 'gt.png' : selectedSlug === 'fcmb' ? 'fcmb.jpg' : `${selectedSlug}.png`})`
+          }}
+        />
+      )}
 
       {/* Global Header HUD */}
       <header className="hud-header glass">
@@ -494,11 +520,29 @@ function App() {
           position: absolute;
           inset: 0;
           z-index: 2;
-          transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .canvas-wrapper.shift-left {
           transform: translateX(-160px);
+          opacity: 0.08; /* Fade out star universe so the bank background shines */
+        }
+
+        .dynamic-bg-overlay {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          opacity: 0.18; /* subtle background projection */
+          transition: opacity 0.8s ease-in-out;
+          z-index: 1;
+          pointer-events: none;
+          animation: fadeInBg 0.8s ease-in-out;
+        }
+
+        @keyframes fadeInBg {
+          from { opacity: 0; }
+          to { opacity: 0.18; }
         }
 
         .guide-hud {
