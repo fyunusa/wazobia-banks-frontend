@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Mic, MicOff, X, ArrowRight, Play, Square, Loader } from 'lucide-react';
-import { submitQuery, fetchSuggestedQuestions } from '../services/api';
+import { submitQuery, fetchSuggestedQuestions, streamVoiceQuery } from '../services/api';
 import type { QueryResponse } from '../services/api';
 import { WazobiaVoiceClient } from '../services/websocket';
 import { AudioWaveform } from './AudioWaveform';
@@ -24,6 +24,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ bank, onClose }: ChatPanelProps) {
   const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
+  const [voiceMethod, setVoiceMethod] = useState<'sse' | 'ws'>('sse');
   const [language, setLanguage] = useState<string>('en');
   const [voiceGender, setVoiceGender] = useState<'male' | 'female'>('female');
   
@@ -40,6 +41,10 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   
+  // SSE MediaRecorder references
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+
   // WebSocket Client reference
   const wsClientRef = useRef<WazobiaVoiceClient | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
@@ -67,17 +72,36 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Clean up audio playback on unmount
+  // Clean up audio & connections on unmount or bank change
   useEffect(() => {
     return () => {
-      if (currentAudioRef.current) {
-        currentAudioRef.current.pause();
-      }
-      if (wsClientRef.current) {
-        wsClientRef.current.disconnect();
-      }
+      cleanupAudio();
+      cleanupConnections();
     };
-  }, []);
+  }, [bank]);
+
+  const cleanupAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+    setPlayingAudioId(null);
+  };
+
+  const cleanupConnections = () => {
+    // Stop recording tracks
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    // Disconnect websocket
+    if (wsClientRef.current) {
+      wsClientRef.current.disconnect();
+      wsClientRef.current = null;
+      setWsConnected(false);
+    }
+    setIsRecording(false);
+  };
 
   // Initialize and connect WebSocket client for streaming voice
   const initWebSocket = () => {
@@ -195,14 +219,21 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
   const handleToggleChatMode = (mode: 'text' | 'voice') => {
     setChatMode(mode);
-    if (mode === 'voice') {
+    cleanupAudio();
+    cleanupConnections();
+    
+    if (mode === 'voice' && voiceMethod === 'ws') {
       initWebSocket();
-    } else {
-      if (wsClientRef.current) {
-        wsClientRef.current.disconnect();
-        wsClientRef.current = null;
-        setWsConnected(false);
-      }
+    }
+  };
+
+  const handleVoiceMethodChange = (method: 'sse' | 'ws') => {
+    setVoiceMethod(method);
+    cleanupAudio();
+    cleanupConnections();
+
+    if (method === 'ws') {
+      initWebSocket();
     }
   };
 
@@ -283,34 +314,164 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
     }
   };
 
-  // Trigger Voice Input Recording (WebSocket Mode)
+  // Voice Interaction Trigger
   const handleToggleVoiceRecording = async () => {
-    if (isRecording) {
-      // Stop recording
-      if (wsClientRef.current) {
-        wsClientRef.current.stopRecording();
+    if (voiceMethod === 'ws') {
+      // WebSocket Real-time Mode
+      if (isRecording) {
+        if (wsClientRef.current) {
+          wsClientRef.current.stopRecording();
+        }
+      } else {
+        setIsRecording(true);
+        setVoiceTranscript('');
+        
+        if (!wsClientRef.current || !wsConnected) {
+          initWebSocket();
+        }
+
+        try {
+          if (wsClientRef.current) {
+            await wsClientRef.current.startRecording({
+              lang: language,
+              gender: voiceGender
+            });
+          }
+        } catch (err: any) {
+          setIsRecording(false);
+          alert(err.message);
+        }
       }
     } else {
-      // Start recording
-      setIsRecording(true);
-      setVoiceTranscript('');
-      
-      if (!wsClientRef.current || !wsConnected) {
-        initWebSocket();
-      }
-
-      // Check user media access and start streaming chunks
-      try {
-        if (wsClientRef.current) {
-          await wsClientRef.current.startRecording({
-            lang: language,
-            gender: voiceGender
-          });
+      // SSE Streaming Mode (Recommended)
+      if (isRecording) {
+        // Stop recording
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
         }
-      } catch (err: any) {
+        if (mediaStreamRef.current) {
+          mediaStreamRef.current.getTracks().forEach(track => track.stop());
+        }
         setIsRecording(false);
-        alert(err.message);
+      } else {
+        // Start recording
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
+          });
+          mediaStreamRef.current = stream;
+
+          const recorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = recorder;
+
+          const chunks: Blob[] = [];
+          recorder.ondataavailable = (e) => {
+            if (e.data.size > 0) {
+              chunks.push(e.data);
+            }
+          };
+
+          recorder.onstop = async () => {
+            const audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+            await handleSSEQuery(audioBlob);
+          };
+
+          setIsRecording(true);
+          setVoiceTranscript('');
+          recorder.start();
+        } catch (err: any) {
+          alert(`Microphone access failed: ${err.message}`);
+        }
       }
+    }
+  };
+
+  // Perform SSE streaming query with Blob
+  const handleSSEQuery = async (audioBlob: Blob) => {
+    setIsTyping(true);
+    cleanupAudio();
+
+    const tempUserMsgId = `user-sse-${Date.now()}`;
+    const tempBotMsgId = `bot-sse-${Date.now()}`;
+
+    // Add placeholders to chat log
+    setMessages(prev => [
+      ...prev,
+      {
+        id: tempUserMsgId,
+        sender: 'user',
+        text: 'Transcribing speech...',
+        lang: language,
+      },
+      {
+        id: tempBotMsgId,
+        sender: 'bot',
+        text: 'Generating search context...',
+        isLoading: true,
+      }
+    ]);
+
+    const collectedAudioBase64: string[] = [];
+
+    try {
+      await streamVoiceQuery(
+        audioBlob,
+        bank.slug,
+        language,
+        voiceGender,
+        {
+          onTranscript: (data) => {
+            setMessages(prev => prev.map(m => m.id === tempUserMsgId ? { ...m, text: data.text, lang: data.language } : m));
+          },
+          onResponse: (data) => {
+            setIsTyping(false);
+            setMessages(prev => prev.map(m => m.id === tempBotMsgId ? { ...m, text: data.text } : m));
+          },
+          onAudioChunk: (data) => {
+            collectedAudioBase64.push(data.audio_base64);
+          },
+          onCompleted: (data) => {
+            // Stitch all chunks together
+            const binaryString = collectedAudioBase64.map(b64 => atob(b64)).join('');
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            const wavBlob = new Blob([bytes], { type: 'audio/wav' });
+            const blobUrl = URL.createObjectURL(wavBlob);
+
+            setMessages(prev => prev.map(m => m.id === tempBotMsgId ? {
+              ...m,
+              audioBlobUrl: blobUrl,
+              sources: data.sources,
+              isLoading: false,
+            } : m));
+
+            // Auto-play the voice response
+            playAudio(tempBotMsgId, blobUrl);
+          },
+          onError: (error) => {
+            setIsTyping(false);
+            setMessages(prev => prev.map(m => m.id === tempBotMsgId ? {
+              ...m,
+              text: `Error processing voice: ${error}`,
+              isLoading: false,
+            } : m));
+          }
+        }
+      );
+    } catch (err: any) {
+      setIsTyping(false);
+      setMessages(prev => prev.map(m => m.id === tempBotMsgId ? {
+        ...m,
+        text: `SSE Connection Failed: ${err.message}`,
+        isLoading: false,
+      } : m));
     }
   };
 
@@ -345,11 +506,11 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
             className={`tab-btn ${chatMode === 'voice' ? 'active' : ''}`}
             onClick={() => handleToggleChatMode('voice')}
           >
-            Voice Stream
+            Voice Assistant
           </button>
         </div>
 
-        {/* Language & Voice Settings */}
+        {/* Configuration Row */}
         <div className="dropdowns-row">
           <div className="control-group">
             <label>Language</label>
@@ -359,7 +520,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
               <option value="yo">Yoruba (Káàsọ̀)</option>
               <option value="ha">Hausa (Sannu)</option>
               <option value="ig">Igbo (Ndịwo)</option>
-              {chatMode === 'voice' && <option value="auto">Auto-Detect</option>}
+              <option value="auto">Auto-Detect</option>
             </select>
           </div>
 
@@ -370,6 +531,16 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
               <option value="male">Gentleman (Male)</option>
             </select>
           </div>
+
+          {chatMode === 'voice' && (
+            <div className="control-group">
+              <label>API Mode</label>
+              <select value={voiceMethod} onChange={(e) => handleVoiceMethodChange(e.target.value as 'sse' | 'ws')}>
+                <option value="sse">SSE Stream</option>
+                <option value="ws">Real-Time WS</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -391,11 +562,11 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
                 </button>
               )}
 
-              {/* Loader for loading status in WS mode */}
+              {/* Loader for loading status in WS/SSE modes */}
               {msg.isLoading && (
                 <div className="message-loader">
                   <Loader className="spinner" size={16} />
-                  <span>Synthesizing voice...</span>
+                  <span>Streaming assistant response...</span>
                 </div>
               )}
             </div>
@@ -481,7 +652,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
                 {voiceTranscript ? (
                   <p className="live-transcript">"{voiceTranscript}"</p>
                 ) : (
-                  <p className="listening-prompt">Listening... speak in your selected language</p>
+                  <p className="listening-prompt">
+                    {voiceMethod === 'ws' ? "Real-time streaming: start speaking..." : "Recording locally: speak and press mic when done..."}
+                  </p>
                 )}
               </div>
             )}
@@ -501,7 +674,9 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
                 {isRecording ? <MicOff size={24} /> : <Mic size={24} />}
               </button>
               <span className="mic-status-label">
-                {isRecording ? "Press to send query" : "Tap microphone to speak"}
+                {isRecording 
+                  ? (voiceMethod === 'ws' ? "Press to send manually" : "Press to finish and stream") 
+                  : "Tap microphone to speak"}
               </span>
             </div>
           </div>
@@ -616,7 +791,7 @@ export function ChatPanel({ bank, onClose }: ChatPanelProps) {
 
         .dropdowns-row {
           display: flex;
-          gap: 12px;
+          gap: 8px;
         }
 
         .control-group {

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { StarsBackground } from './components/StarsBackground';
 import { BankCarousel3D } from './components/BankCarousel3D';
 import type { BankData } from './components/BankCarousel3D';
 import { ChatPanel } from './components/ChatPanel';
-import { HelpCircle, ChevronRight, Sparkles } from 'lucide-react';
+import { AdminPortal } from './components/AdminPortal';
+import { fetchInstitutions } from './services/api';
+import { HelpCircle, ChevronRight, Sparkles, Settings } from 'lucide-react';
 
-const BANKS: BankData[] = [
+const FALLBACK_BANKS: BankData[] = [
   {
     slug: 'gtbank',
     name: 'GTBank',
@@ -130,10 +132,36 @@ const BANKS: BankData[] = [
 ];
 
 function App() {
+  const [banks, setBanks] = useState<BankData[]>(FALLBACK_BANKS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [carouselAngle, setCarouselAngle] = useState(0);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
-  const selectedBank = BANKS.find((b) => b.slug === selectedSlug);
+  // Fetch dynamic active institutions on mount and merge details
+  useEffect(() => {
+    fetchInstitutions()
+      .then((data) => {
+        const merged = data.map((dyn) => {
+          const local = FALLBACK_BANKS.find(l => l.slug === dyn.slug);
+          return {
+            slug: dyn.slug,
+            name: dyn.name,
+            full_name: dyn.full_name,
+            brandColor: local?.brandColor || '#6366f1',
+            ussd: dyn.ussd_code || local?.ussd || '*737#',
+            license: dyn.cbn_license_type || local?.license || 'Commercial Bank'
+          };
+        });
+        if (merged.length > 0) {
+          setBanks(merged);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch dynamic institutions, using static fallbacks.", err);
+      });
+  }, []);
+
+  const selectedBank = banks.find((b) => b.slug === selectedSlug);
 
   return (
     <div className="dashboard-container">
@@ -142,10 +170,20 @@ function App() {
 
       {/* Global Header HUD */}
       <header className="hud-header glass">
-        <div className="header-logo">
-          <Sparkles className="logo-spark" />
-          <h1 className="text-gradient">WAZOBIA AI</h1>
-          <span className="badge">RAG v1.0</span>
+        <div className="header-top-row">
+          <div className="header-logo">
+            <Sparkles className="logo-spark" />
+            <h1 className="text-gradient">WAZOBIA AI</h1>
+            <span className="badge">RAG v1.0</span>
+          </div>
+          
+          <button 
+            className="admin-portal-btn glass-interactive"
+            onClick={() => setIsAdminOpen(true)}
+          >
+            <Settings size={14} />
+            <span>Admin Portal</span>
+          </button>
         </div>
         <p className="subtitle">Nigeria's Interactive 3D Multilingual Banking Assistant</p>
       </header>
@@ -154,10 +192,10 @@ function App() {
       <aside className="sidebar glass">
         <div className="sidebar-title">
           <h2>INSTITUTIONS</h2>
-          <span className="count-label">{BANKS.length} active</span>
+          <span className="count-label">{banks.length} active</span>
         </div>
         <div className="sidebar-list">
-          {BANKS.map((b) => (
+          {banks.map((b) => (
             <button
               key={b.slug}
               className={`sidebar-item glass-interactive ${selectedSlug === b.slug ? 'active' : ''}`}
@@ -192,7 +230,7 @@ function App() {
 
           {/* 3D Bank Carousel */}
           <BankCarousel3D
-            banks={BANKS}
+            banks={banks}
             selectedSlug={selectedSlug}
             onSelectBank={(slug) => setSelectedSlug(slug)}
             carouselAngle={carouselAngle}
@@ -216,6 +254,13 @@ function App() {
           onClose={() => setSelectedSlug(null)}
         />
       )}
+
+      {/* Administrative Knowledge Ingestion Portal Modal */}
+      <AdminPortal
+        isOpen={isAdminOpen}
+        onClose={() => setIsAdminOpen(false)}
+        bankSlugs={banks.map(b => ({ slug: b.slug, name: b.name }))}
+      />
 
       {/* CSS Overlay Styles */}
       <style>{`
@@ -243,19 +288,27 @@ function App() {
           position: absolute;
           top: 16px;
           left: 16px;
-          padding: 12px 24px;
+          width: 320px;
+          padding: 12px 18px;
           border-radius: 16px;
           z-index: 10;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 4px;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .header-top-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          width: 100%;
         }
 
         .header-logo {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
         }
 
         .logo-spark {
@@ -264,25 +317,46 @@ function App() {
         }
 
         .hud-header h1 {
-          font-size: 20px;
+          font-size: 16px;
           margin: 0;
           font-weight: 800;
           letter-spacing: 0.05em;
         }
 
         .badge {
-          font-size: 9px;
+          font-size: 8px;
           background: var(--color-primary-glow);
           color: var(--color-primary);
           border: 1px solid var(--border-glow);
-          padding: 2px 6px;
+          padding: 1px 4px;
           border-radius: 9999px;
           font-weight: 700;
           font-family: var(--font-mono);
         }
 
+        .admin-portal-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 8px;
+          border-radius: 6px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          color: var(--text-secondary);
+          font-size: 10px;
+          font-weight: 600;
+          text-transform: uppercase;
+          transition: all 0.2s;
+        }
+
+        .admin-portal-btn:hover {
+          color: #fff;
+          background: var(--color-primary-glow);
+          border-color: rgba(99, 102, 241, 0.3);
+        }
+
         .subtitle {
-          font-size: 11px;
+          font-size: 9px;
           color: var(--text-secondary);
           font-weight: 500;
         }
