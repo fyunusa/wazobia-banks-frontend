@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, CheckCircle, AlertTriangle, Loader, Eye, EyeOff, History } from 'lucide-react';
-import { uploadDocuments, fetchTaskStatus } from '../services/api';
+import React, { useState, useRef } from 'react';
+import { X, Upload, AlertTriangle, Loader, Eye, EyeOff, History } from 'lucide-react';
+import { uploadDocuments } from '../services/api';
 import { IngestTaskHistory } from './IngestTaskHistory';
-import type { TaskStatusResponse } from '../services/api';
 
 interface AdminPortalProps {
   isOpen: boolean;
@@ -15,32 +14,11 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
   const [showKey, setShowKey] = useState(false);
   const [selectedSlug, setSelectedSlug] = useState(bankSlugs[0]?.slug || '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'polling' | 'success' | 'error'>('idle');
+  const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'error'>('idle');
   const [activeTab, setActiveTab] = useState<'upload' | 'history'>('upload');
-  
-  // Results & status references
-  const [taskId, setTaskId] = useState('');
-  const [taskStatus, setTaskStatus] = useState<TaskStatusResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
-  const [pollingAttempts, setPollingAttempts] = useState(0);
-  const MAX_POLLING_ATTEMPTS = 300; // 10 minutes at 2 second intervals
   
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollTimerRef = useRef<number | null>(null);
-
-  // Clean up polling timer on close or unmount
-  useEffect(() => {
-    return () => {
-      stopPolling();
-    };
-  }, []);
-
-  const stopPolling = () => {
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current);
-      pollTimerRef.current = null;
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -51,47 +29,6 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
 
   const removeFile = (idx: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  const startPolling = (tid: string) => {
-    setUploadState('polling');
-    setTaskId(tid);
-    setPollingAttempts(0);
-    
-    // Poll every 2 seconds (max 10 minutes = 300 attempts)
-    pollTimerRef.current = window.setInterval(async () => {
-      setPollingAttempts(prev => {
-        const newAttempts = prev + 1;
-        
-        // Timeout after 10 minutes
-        if (newAttempts > MAX_POLLING_ATTEMPTS) {
-          stopPolling();
-          setErrorMessage(`Task timeout after ${MAX_POLLING_ATTEMPTS * 2}s. Task may still be processing - check logs.`);
-          setUploadState('error');
-          return newAttempts;
-        }
-        
-        return newAttempts;
-      });
-      
-      try {
-        const status = await fetchTaskStatus(tid, apiKey);
-        setTaskStatus(status);
-        
-        if (status.ready) {
-          stopPolling();
-          if (status.status === 'SUCCESS') {
-            setUploadState('success');
-          } else {
-            setErrorMessage(status.result?.error || `Task failed with status: ${status.status}`);
-            setUploadState('error');
-          }
-        }
-      } catch (err: any) {
-        console.error("Task status polling error:", err);
-        // Don't stop polling on error - the task might still be processing
-      }
-    }, 2000);
   };
 
   const handleUploadSubmit = async (e: React.FormEvent) => {
@@ -111,9 +48,10 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
     try {
       const res = await uploadDocuments(selectedSlug, selectedFiles, apiKey);
       if (res.task_id) {
-        startPolling(res.task_id);
-      } else {
-        setUploadState('success');
+        // Show brief success notification
+        alert(`✓ Files uploaded successfully!\nTask ID: ${res.task_id.substring(0, 8)}...\n\nCheck Task History tab to monitor progress.`);
+        // Reset form immediately so user can upload another batch
+        resetForm();
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'File upload failed.');
@@ -124,11 +62,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
   const resetForm = () => {
     setSelectedFiles([]);
     setUploadState('idle');
-    setTaskId('');
-    setTaskStatus(null);
     setErrorMessage('');
-    setPollingAttempts(0);
-    stopPolling();
   };
 
   if (!isOpen) return null;
@@ -166,7 +100,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
         </div>
 
         {/* Upload Tab */}
-        {activeTab === 'upload' && (uploadState === 'idle' || uploadState === 'uploading' ? (
+        {activeTab === 'upload' && (
           <form onSubmit={handleUploadSubmit} className="modal-body">
             {/* API Key Input */}
             <div className="form-group">
@@ -246,6 +180,14 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
               </div>
             )}
 
+            {/* Error Display */}
+            {uploadState === 'error' && errorMessage && (
+              <div className="error-card">
+                <AlertTriangle size={16} style={{ marginRight: '8px' }} />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             {/* Submit Button */}
             <button 
               type="submit" 
@@ -262,73 +204,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
               )}
             </button>
           </form>
-        ) : (
-          /* Task Polling and Result screen */
-          <div className="modal-body status-view">
-            {uploadState === 'polling' && (
-              <div className="status-box">
-                <Loader className="spinner status-icon-large" size={48} />
-                <h3>Ingestion Processing</h3>
-                <p className="status-label">Celery Task ID: <code>{taskId}</code></p>
-                <p className="status-desc">
-                  Files uploaded successfully. Server is running RAG pipeline: parsing documents, generating semantic chunks, computing cohere embeddings, and writing to Qdrant.
-                </p>
-                <div className="polling-tag">
-                  <span className="pulse-dot" />
-                  <span>Status: {taskStatus?.status || 'PENDING'}</span>
-                </div>
-                <p className="polling-time">
-                  Elapsed: {Math.floor(pollingAttempts * 2 / 60)}m {(pollingAttempts * 2) % 60}s
-                  {pollingAttempts > 0 && ` (checking... attempt ${pollingAttempts})`}
-                </p>
-              </div>
-            )}
-
-            {uploadState === 'success' && (
-              <div className="status-box">
-                <CheckCircle className="status-icon-large success" size={48} />
-                <h3>Knowledgebase Ingestion Successful!</h3>
-                <p className="status-desc">
-                  The documents have been parsed, indexed, and integrated into the Qdrant vector database.
-                </p>
-                
-                {taskStatus?.result && (
-                  <div className="result-stats">
-                    <div className="stat-card">
-                      <span className="stat-val">{taskStatus.result.pages_scraped || 1}</span>
-                      <span className="stat-name">Pages Scraped</span>
-                    </div>
-                    <div className="stat-card">
-                      <span className="stat-val">{taskStatus.result.chunks_created || 0}</span>
-                      <span className="stat-name">Chunks Formed</span>
-                    </div>
-                    <div className="stat-card">
-                      <span className="stat-val">{taskStatus.result.points_upserted || 0}</span>
-                      <span className="stat-name">Points Indexed</span>
-                    </div>
-                  </div>
-                )}
-                
-                <button className="reset-btn" onClick={resetForm}>
-                  Upload More Files
-                </button>
-              </div>
-            )}
-
-            {uploadState === 'error' && (
-              <div className="status-box">
-                <AlertTriangle className="status-icon-large failure" size={48} />
-                <h3>Ingestion Pipeline Error</h3>
-                <div className="error-card">
-                  <p>{errorMessage}</p>
-                </div>
-                <button className="reset-btn" onClick={resetForm}>
-                  Try Again
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
+        )}
 
         {/* Task History Tab */}
         {activeTab === 'history' && apiKey && (
