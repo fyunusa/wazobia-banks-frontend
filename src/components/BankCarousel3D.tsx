@@ -72,21 +72,6 @@ export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarous
     targetAngleRef.current = snapped;
   }, [SPACING_ANGLE]);
 
-  // Prevent default touch behaviors on mobile
-  const handleTouchStart = useCallback((e: any) => {
-    if (e.touches.length === 1) {
-      e.preventDefault?.();
-      handlePointerDown(e);
-    }
-  }, [handlePointerDown]);
-
-  const handleTouchMove = useCallback((e: any) => {
-    if (e.touches.length === 1) {
-      e.preventDefault?.();
-      handlePointerMove(e);
-    }
-  }, [handlePointerMove]);
-
   useFrame(() => {
     // Smooth lerp to target
     currentAngleRef.current = THREE.MathUtils.lerp(
