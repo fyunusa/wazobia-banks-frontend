@@ -8,7 +8,7 @@ import type { BankData } from './components/BankCarousel3D';
 import { ChatPanel } from './components/ChatPanel';
 import { AdminPortal } from './components/AdminPortal';
 import { fetchInstitutions } from './services/api';
-import { Settings } from 'lucide-react';
+import { Settings, ArrowLeft } from 'lucide-react';
 
 const FALLBACK_BANKS: BankData[] = [
   { slug: 'gtbank',     name: 'GTBank',        full_name: 'Guaranty Trust Bank',       brandColor: '#dd4f05', ussd: '*737#',     license: 'Commercial Bank' },
@@ -167,6 +167,15 @@ export default function App() {
               })`
             }}
           />
+          
+          {/* Back Button to return to carousel */}
+          <button
+            className="bank-back-btn"
+            onClick={() => setSelectedSlug(null)}
+            title="Back to banks"
+          >
+            <ArrowLeft size={20} />
+          </button>
           
           {/* Mobile: Show chat button overlay if chat is closed */}
           {isMobile && !isChatOpen && (
