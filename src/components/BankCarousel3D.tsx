@@ -33,6 +33,9 @@ export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarous
   const lastX = useRef(0);
   const { size } = useThree();
 
+  // Detect if on mobile
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+
   // How many cards are visible spread + tilt
   const SPACING_ANGLE = (2 * Math.PI) / banks.length;
   const RADIUS = 6.5; // Ring radius — enough space so cards aren't zoomed in
@@ -45,7 +48,7 @@ export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarous
     return (banks.length - idx) % banks.length;
   };
 
-  // Pointer drag handling
+  // Pointer drag handling with mobile-optimized sensitivity
   const handlePointerDown = useCallback((e: any) => {
     isDragging.current = true;
     lastX.current = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
@@ -55,10 +58,12 @@ export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarous
     if (!isDragging.current) return;
     const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
     const dx = x - lastX.current;
-    const sensitivity = (2 * Math.PI) / size.width * 1.5;
+    // Mobile: reduced sensitivity for better control (multiply by 0.8 on mobile)
+    const baseSensitivity = (2 * Math.PI) / size.width * 1.5;
+    const sensitivity = isMobile ? baseSensitivity * 0.8 : baseSensitivity;
     targetAngleRef.current += dx * sensitivity;
     lastX.current = x;
-  }, [size.width]);
+  }, [size.width, isMobile]);
 
   const handlePointerUp = useCallback(() => {
     isDragging.current = false;
@@ -66,6 +71,21 @@ export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarous
     const snapped = Math.round(targetAngleRef.current / SPACING_ANGLE) * SPACING_ANGLE;
     targetAngleRef.current = snapped;
   }, [SPACING_ANGLE]);
+
+  // Prevent default touch behaviors on mobile
+  const handleTouchStart = useCallback((e: any) => {
+    if (e.touches.length === 1) {
+      e.preventDefault?.();
+      handlePointerDown(e);
+    }
+  }, [handlePointerDown]);
+
+  const handleTouchMove = useCallback((e: any) => {
+    if (e.touches.length === 1) {
+      e.preventDefault?.();
+      handlePointerMove(e);
+    }
+  }, [handlePointerMove]);
 
   useFrame(() => {
     // Smooth lerp to target
