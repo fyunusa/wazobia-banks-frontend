@@ -171,6 +171,42 @@ export async function fetchTaskStatus(
   return response.json();
 }
 
+export async function fetchIngestTaskHistory(
+  apiKey: string,
+  limit: number = 50
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/v1/ingest/tasks?limit=${limit}`, {
+    headers: {
+      'X-API-Key': apiKey,
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch task history');
+  }
+  
+  return response.json();
+}
+
+export async function retryIngestTask(
+  taskId: string,
+  apiKey: string
+): Promise<any> {
+  const response = await fetch(`${API_BASE_URL}/v1/ingest/tasks/${taskId}/retry`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': apiKey,
+    }
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Failed to retry task');
+  }
+  
+  return response.json();
+}
+
 export async function streamVoiceQuery(
   audioBlob: Blob,
   institutionSlug: string,

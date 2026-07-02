@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Upload, CheckCircle, AlertTriangle, Loader, Eye, EyeOff } from 'lucide-react';
+import { X, Upload, CheckCircle, AlertTriangle, Loader, Eye, EyeOff, History } from 'lucide-react';
 import { uploadDocuments, fetchTaskStatus } from '../services/api';
+import { IngestTaskHistory } from './IngestTaskHistory';
 import type { TaskStatusResponse } from '../services/api';
 
 interface AdminPortalProps {
@@ -15,11 +16,14 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
   const [selectedSlug, setSelectedSlug] = useState(bankSlugs[0]?.slug || '');
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'polling' | 'success' | 'error'>('idle');
+  const [activeTab, setActiveTab] = useState<'upload' | 'history'>('upload');
   
   // Results & status references
   const [taskId, setTaskId] = useState('');
   const [taskStatus, setTaskStatus] = useState<TaskStatusResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 300; // 10 minutes at 2 second intervals
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollTimerRef = useRef<number | null>(null);
@@ -52,9 +56,24 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
   const startPolling = (tid: string) => {
     setUploadState('polling');
     setTaskId(tid);
+    setPollingAttempts(0);
     
-    // Poll every 2 seconds
+    // Poll every 2 seconds (max 10 minutes = 300 attempts)
     pollTimerRef.current = window.setInterval(async () => {
+      setPollingAttempts(prev => {
+        const newAttempts = prev + 1;
+        
+        // Timeout after 10 minutes
+        if (newAttempts > MAX_POLLING_ATTEMPTS) {
+          stopPolling();
+          setErrorMessage(`Task timeout after ${MAX_POLLING_ATTEMPTS * 2}s. Task may still be processing - check logs.`);
+          setUploadState('error');
+          return newAttempts;
+        }
+        
+        return newAttempts;
+      });
+      
       try {
         const status = await fetchTaskStatus(tid, apiKey);
         setTaskStatus(status);
@@ -64,12 +83,13 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           if (status.status === 'SUCCESS') {
             setUploadState('success');
           } else {
-            setErrorMessage(status.result?.error || 'Background task ingestion failed');
+            setErrorMessage(status.result?.error || `Task failed with status: ${status.status}`);
             setUploadState('error');
           }
         }
       } catch (err: any) {
         console.error("Task status polling error:", err);
+        // Don't stop polling on error - the task might still be processing
       }
     }, 2000);
   };
@@ -107,6 +127,7 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
     setTaskId('');
     setTaskStatus(null);
     setErrorMessage('');
+    setPollingAttempts(0);
     stopPolling();
   };
 
@@ -126,7 +147,26 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           </button>
         </div>
 
-        {uploadState === 'idle' || uploadState === 'uploading' ? (
+        {/* Tab Navigation */}
+        <div className="modal-tabs">
+          <button 
+            className={`tab-btn ${activeTab === 'upload' ? 'active' : ''}`}
+            onClick={() => setActiveTab('upload')}
+          >
+            <Upload size={14} />
+            <span>Upload Documents</span>
+          </button>
+          <button 
+            className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+            onClick={() => setActiveTab('history')}
+          >
+            <History size={14} />
+            <span>Task History</span>
+          </button>
+        </div>
+
+        {/* Upload Tab */}
+        {activeTab === 'upload' && (uploadState === 'idle' || uploadState === 'uploading' ? (
           <form onSubmit={handleUploadSubmit} className="modal-body">
             {/* API Key Input */}
             <div className="form-group">
@@ -237,6 +277,10 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
                   <span className="pulse-dot" />
                   <span>Status: {taskStatus?.status || 'PENDING'}</span>
                 </div>
+                <p className="polling-time">
+                  Elapsed: {Math.floor(pollingAttempts * 2 / 60)}m {(pollingAttempts * 2) % 60}s
+                  {pollingAttempts > 0 && ` (checking... attempt ${pollingAttempts})`}
+                </p>
               </div>
             )}
 
@@ -283,6 +327,22 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
                 </button>
               </div>
             )}
+          </div>
+        ))}
+
+        {/* Task History Tab */}
+        {activeTab === 'history' && apiKey && (
+          <div className="modal-body">
+            <IngestTaskHistory apiKey={apiKey} />
+          </div>
+        )}
+
+        {activeTab === 'history' && !apiKey && (
+          <div className="modal-body">
+            <div className="empty-state">
+              <AlertTriangle size={32} />
+              <p>Please enter your X-API-Key on the Upload tab first</p>
+            </div>
           </div>
         )}
       </div>
@@ -343,6 +403,43 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           font-size: 16px;
           color: #fff;
           letter-spacing: 0.05em;
+        }
+
+        .modal-tabs {
+          display: flex;
+          gap: 0;
+          border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+          padding: 0 24px;
+          background: rgba(15, 23, 42, 0.5);
+        }
+
+        .tab-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 12px 16px;
+          background: transparent;
+          border: none;
+          color: rgba(255, 255, 255, 0.5);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          border-bottom: 2px solid transparent;
+          white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+          color: rgba(255, 255, 255, 0.7);
+        }
+
+        .tab-btn.active {
+          color: #6366f1;
+          border-bottom-color: #6366f1;
+        }
+
+        .tab-btn svg {
+          opacity: 0.8;
         }
 
         .modal-body {
@@ -596,6 +693,13 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           color: var(--color-primary);
         }
 
+        .polling-time {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.6);
+          margin-top: 12px;
+          text-align: center;
+        }
+
         .pulse-dot {
           width: 8px;
           height: 8px;
@@ -646,6 +750,27 @@ export function AdminPortal({ isOpen, onClose, bankSlugs }: AdminPortalProps) {
           color: #f87171;
           max-width: 400px;
           word-break: break-all;
+        }
+
+        .empty-state {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 40px 20px;
+          color: rgba(255, 255, 255, 0.6);
+          text-align: center;
+        }
+
+        .empty-state svg {
+          margin-bottom: 12px;
+          color: #6366f1;
+          opacity: 0.6;
+        }
+
+        .empty-state p {
+          margin: 0;
+          font-size: 13px;
         }
 
         .reset-btn {
