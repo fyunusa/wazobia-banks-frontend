@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { RefreshCw, AlertTriangle, CheckCircle, Clock, Loader, ChevronDown, ChevronUp } from 'lucide-react';
 import { fetchIngestTaskHistory, retryIngestTask } from '../services/api';
 import './IngestTaskHistory.css';
