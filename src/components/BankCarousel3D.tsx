@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useCallback } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { BankCard3D } from './BankCard3D';
@@ -16,69 +16,70 @@ interface BankCarouselProps {
   banks: BankData[];
   selectedSlug: string | null;
   onSelectBank: (slug: string) => void;
-  carouselAngle: number;
-  setCarouselAngle: (angle: number) => void;
 }
 
-export function BankCarousel3D({
-  banks,
-  selectedSlug,
-  onSelectBank,
-  carouselAngle,
-  setCarouselAngle,
-}: BankCarouselProps) {
+/**
+ * CoverFlow-style 3D carousel:
+ * - Cards arc in a semicircle, facing forward
+ * - Drag left/right to rotate through banks
+ * - Front-center card is largest and clearest
+ * - Side cards tilt away (coverflow effect)
+ */
+export function BankCarousel3D({ banks, selectedSlug, onSelectBank }: BankCarouselProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const currentAngle = useRef(0);
+  const targetAngleRef = useRef(0);
+  const currentAngleRef = useRef(0);
+  const isDragging = useRef(false);
+  const lastX = useRef(0);
   const { size } = useThree();
 
-  const radius = 5.2; // Radius of the 3D ring
-  const numBanks = banks.length;
+  // How many cards are visible spread + tilt
+  const SPACING_ANGLE = (2 * Math.PI) / banks.length;
+  const RADIUS = 6.5; // Ring radius — enough space so cards aren't zoomed in
 
-  // Align carousel when selection changes from the list or layout
-  useEffect(() => {
-    if (selectedSlug) {
-      const idx = banks.findIndex((b) => b.slug === selectedSlug);
-      if (idx !== -1) {
-        // Calculate the angle required to center this bank card at the front (theta = 0)
-        const target = - (idx * Math.PI * 2) / numBanks;
-        setCarouselAngle(target);
-      }
-    }
-  }, [selectedSlug, banks, numBanks, setCarouselAngle]);
+  // Figure out which card is closest to front (angle = 0)
+  const getFrontIndex = () => {
+    const angle = currentAngleRef.current;
+    const normalized = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const idx = Math.round(normalized / SPACING_ANGLE) % banks.length;
+    return (banks.length - idx) % banks.length;
+  };
+
+  // Pointer drag handling
+  const handlePointerDown = useCallback((e: any) => {
+    isDragging.current = true;
+    lastX.current = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+  }, []);
+
+  const handlePointerMove = useCallback((e: any) => {
+    if (!isDragging.current) return;
+    const x = e.clientX ?? e.touches?.[0]?.clientX ?? 0;
+    const dx = x - lastX.current;
+    const sensitivity = (2 * Math.PI) / size.width * 1.5;
+    targetAngleRef.current += dx * sensitivity;
+    lastX.current = x;
+  }, [size.width]);
+
+  const handlePointerUp = useCallback(() => {
+    isDragging.current = false;
+    // Snap to nearest card
+    const snapped = Math.round(targetAngleRef.current / SPACING_ANGLE) * SPACING_ANGLE;
+    targetAngleRef.current = snapped;
+  }, [SPACING_ANGLE]);
 
   useFrame(() => {
-    if (!groupRef.current) return;
-
-    // Smoothly lerp current angle to target angle
-    currentAngle.current = THREE.MathUtils.lerp(currentAngle.current, carouselAngle, 0.07);
-    groupRef.current.rotation.y = currentAngle.current;
+    // Smooth lerp to target
+    currentAngleRef.current = THREE.MathUtils.lerp(
+      currentAngleRef.current,
+      targetAngleRef.current,
+      0.09
+    );
+    if (groupRef.current) {
+      groupRef.current.rotation.y = currentAngleRef.current;
+    }
   });
 
-  // Custom pointer drag handlers for rotating the carousel
-  const isDragging = useRef(false);
-  const previousX = useRef(0);
-
-  const handlePointerDown = (e: any) => {
-    e.stopPropagation();
-    isDragging.current = true;
-    previousX.current = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-  };
-
-  const handlePointerMove = (e: any) => {
-    if (!isDragging.current) return;
-    e.stopPropagation();
-    const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-    const deltaX = x - previousX.current;
-    
-    // Sensitivity scaled by viewport size
-    const sensitivity = (Math.PI * 2) / size.width;
-    setCarouselAngle(carouselAngle + deltaX * sensitivity * 1.2);
-    previousX.current = x;
-  };
-
-  const handlePointerUp = () => {
-    isDragging.current = false;
-  };
+  const frontIdx = getFrontIndex();
 
   return (
     <group
@@ -86,19 +87,18 @@ export function BankCarousel3D({
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerOut={handlePointerUp}
       onPointerLeave={handlePointerUp}
     >
-      {banks.map((bank, index) => {
-        // Calculate original static angle for this card
-        const cardStaticAngle = (index * Math.PI * 2) / numBanks;
-        
-        // Position card along the ring circumference
-        const x = radius * Math.sin(cardStaticAngle);
-        const z = radius * Math.cos(cardStaticAngle);
-        
-        // Make the cards face outward from the center
-        const cardRotationY = cardStaticAngle;
+      {banks.map((bank, i) => {
+        // Each card's static angle in the ring
+        const cardAngle = (i / banks.length) * Math.PI * 2;
+        const x = Math.sin(cardAngle) * RADIUS;
+        const z = Math.cos(cardAngle) * RADIUS;
+
+        // Coverflow tilt: cards on the sides tilt away
+        const rotY = cardAngle;
+
+        const isFront = i === frontIdx;
 
         return (
           <BankCard3D
@@ -109,8 +109,9 @@ export function BankCarousel3D({
             ussd={bank.ussd}
             license={bank.license}
             position={[x, 0, z]}
-            rotationY={cardRotationY}
+            rotationY={rotY}
             isSelected={selectedSlug === bank.slug}
+            isFocused={isFront}
             onClick={() => onSelectBank(bank.slug)}
           />
         );
