@@ -474,4 +474,59 @@ html, body {
   .control-group select {
     font-size: 12px;
   }
+
+  /* ─── Mobile Chat Trigger ─── */
+  .mobile-chat-trigger {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 40;
+    padding-bottom: clamp(40px, 15vh, 80px);
+    pointer-events: none;
+  }
+
+  .chat-trigger-btn {
+    pointer-events: all;
+    padding: clamp(12px, 3vw, 16px) clamp(24px, 6vw, 32px);
+    background: white;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: clamp(14px, 4vw, 16px);
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .chat-trigger-btn:active {
+    transform: scale(0.95);
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  /* ─── Mobile Chat Panel Updates ─── */
+  .chat-panel {
+    animation: slideUpMobile 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUpMobile {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
 }

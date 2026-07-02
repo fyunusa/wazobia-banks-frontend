@@ -33,12 +33,14 @@ const FALLBACK_BANKS: BankData[] = [
 export default function App() {
   const [banks, setBanks] = useState<BankData[]>(FALLBACK_BANKS);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   const headerRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
 
   const selectedBank = banks.find((b) => b.slug === selectedSlug);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
 
   // Fetch live institutions
   useEffect(() => {
@@ -165,10 +167,33 @@ export default function App() {
               })`
             }}
           />
-          <ChatPanel
-            bank={selectedBank}
-            onClose={() => setSelectedSlug(null)}
-          />
+          
+          {/* Mobile: Show chat button overlay if chat is closed */}
+          {isMobile && !isChatOpen && (
+            <div className="mobile-chat-trigger">
+              <button
+                className="chat-trigger-btn"
+                onClick={() => setIsChatOpen(true)}
+                style={{ backgroundColor: selectedBank.brandColor }}
+              >
+                💬 Chat with {selectedBank.name}
+              </button>
+            </div>
+          )}
+          
+          {/* Chat Panel - hidden on mobile by default, visible on desktop */}
+          {(!isMobile || isChatOpen) && (
+            <ChatPanel
+              bank={selectedBank}
+              onClose={() => {
+                if (isMobile) {
+                  setIsChatOpen(false);
+                } else {
+                  setSelectedSlug(null);
+                }
+              }}
+            />
+          )}
         </>
       )}
 
