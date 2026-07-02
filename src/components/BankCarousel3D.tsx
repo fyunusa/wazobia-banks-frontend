@@ -104,6 +104,7 @@ export function BankCarousel3D({
           <BankCard3D
             key={bank.slug}
             name={bank.name}
+            slug={bank.slug}
             brandColor={bank.brandColor}
             ussd={bank.ussd}
             license={bank.license}

@@ -1,10 +1,11 @@
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { ThreeEvent } from '@react-three/fiber';
+import { RoundedBox, Text } from '@react-three/drei';
 import * as THREE from 'three';
 
-export interface BankCardProps {
+interface BankCard3DProps {
   name: string;
+  slug: string;
   brandColor: string;
   ussd: string;
   license: string;
@@ -12,10 +13,14 @@ export interface BankCardProps {
   rotationY: number;
   isSelected: boolean;
   onClick: () => void;
+  scrollOffset?: number;
+  cardIndex?: number;
+  totalCards?: number;
 }
 
 export function BankCard3D({
   name,
+  // slug intentionally unused (kept in interface for future texture loading)
   brandColor,
   ussd,
   license,
@@ -23,221 +28,169 @@ export function BankCard3D({
   rotationY,
   isSelected,
   onClick,
-}: BankCardProps) {
-  const meshRef = useRef<THREE.Group>(null);
-  const glowMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
-  
-  const [isHovered, setIsHovered] = useState(false);
-  const mousePos = useRef({ x: 0, y: 0 });
-  const floatDelay = useMemo(() => Math.random() * Math.PI * 2, []);
+  scrollOffset = 0,
+  cardIndex = 0,
+  totalCards = 1,
+}: BankCard3DProps) {
+  const groupRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
+  const [hovered, setHovered] = useState(false);
 
-  // Generate dynamic premium credit card texture
-  const texture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 320;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      // Sleek background dark fill
-      ctx.fillStyle = '#05070e';
-      ctx.fillRect(0, 0, 512, 320);
+  const color = new THREE.Color(brandColor);
 
-      // Subtle abstract glowing arc overlay
-      const radialGrad = ctx.createRadialGradient(256, 160, 50, 256, 160, 300);
-      radialGrad.addColorStop(0, 'rgba(30, 41, 59, 0.4)');
-      radialGrad.addColorStop(1, 'rgba(3, 7, 18, 0.95)');
-      ctx.fillStyle = radialGrad;
-      ctx.fillRect(0, 0, 512, 320);
-
-      // Draw cyber circuits grid
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 512; i += 16) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i, 320);
-        ctx.stroke();
-      }
-      for (let j = 0; j < 320; j += 16) {
-        ctx.beginPath();
-        ctx.moveTo(0, j);
-        ctx.lineTo(512, j);
-        ctx.stroke();
-      }
-
-      // Neon outline inside card
-      ctx.strokeStyle = brandColor;
-      ctx.lineWidth = 4;
-      ctx.shadowColor = brandColor;
-      ctx.shadowBlur = 10;
-      ctx.beginPath();
-      ctx.roundRect(10, 10, 492, 300, 16);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Chip details
-      const chipGrad = ctx.createLinearGradient(40, 100, 100, 148);
-      chipGrad.addColorStop(0, '#f59e0b');
-      chipGrad.addColorStop(0.5, '#fbbf24');
-      chipGrad.addColorStop(1, '#b45309');
-      ctx.fillStyle = chipGrad;
-      ctx.beginPath();
-      ctx.roundRect(40, 95, 56, 44, 6);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(46, 101, 44, 32);
-
-      // Wifi/NFC waves
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-      ctx.lineWidth = 2.5;
-      for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        ctx.arc(125, 117, 8 + i * 5, -Math.PI / 4, Math.PI / 4);
-        ctx.stroke();
-      }
-
-      // Bank Brand Name
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 34px Outfit, sans-serif';
-      ctx.fillText(name, 40, 60);
-
-      // License type tag
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-      ctx.font = '700 11px Space Grotesk, sans-serif';
-      ctx.fillText(license.toUpperCase(), 40, 78);
-
-      // USSD Code
-      ctx.fillStyle = brandColor;
-      ctx.font = 'bold 22px Space Grotesk, sans-serif';
-      ctx.fillText(`USSD: ${ussd}`, 40, 195);
-
-      // Monogram text inside circles
-      ctx.fillStyle = brandColor;
-      ctx.beginPath();
-      ctx.arc(430, 240, 36, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-      ctx.beginPath();
-      ctx.arc(460, 240, 36, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Bottom Platform Metadata
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-      ctx.font = '10px Space Grotesk, sans-serif';
-      ctx.fillText("SECURE BANKING HUB", 40, 255);
-      
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '600 13px Outfit, sans-serif';
-      ctx.fillText("CLICK TO ESTABLISH LINK", 40, 275);
-    }
-    const tex = new THREE.CanvasTexture(canvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    return tex;
-  }, [name, brandColor, ussd, license]);
+  // Stagger delay per card for entrance animation
+  const staggerDelay = cardIndex / totalCards;
+  const entranceProgress = THREE.MathUtils.clamp(
+    (scrollOffset * 5 - staggerDelay * 0.8) * 2, 0, 1
+  );
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!groupRef.current) return;
+    const t = state.clock.elapsedTime;
 
-    const time = state.clock.getElapsedTime();
-    
-    // Animate glowing outline opacity dynamically on GPU
-    if (glowMaterialRef.current) {
-      glowMaterialRef.current.opacity = 0.35 + Math.sin(time * 4 + floatDelay) * 0.2;
-    }
+    // Float animation — unique phase per card
+    const floatPhase = cardIndex * 0.7;
+    groupRef.current.position.y = position[1] + Math.sin(t * 0.6 + floatPhase) * 0.08;
 
-    // Hover scales & camera offsets
-    const floatOffset = Math.sin(time * 1.5 + floatDelay) * 0.04;
-    let targetScale = isSelected ? 1.15 : isHovered ? 1.08 : 1.0;
-    let targetX = position[0];
-    let targetY = position[1] + floatOffset;
-    let targetZ = position[2];
+    // Entrance scale animation
+    const eased = entranceProgress < 0.5
+      ? 2 * entranceProgress * entranceProgress
+      : -1 + (4 - 2 * entranceProgress) * entranceProgress;
+    const targetScale = isSelected ? 1.15 : hovered ? 1.05 : 1.0;
+    const finalScale = Math.max(eased * targetScale, 0.01);
+    groupRef.current.scale.setScalar(
+      THREE.MathUtils.lerp(groupRef.current.scale.x, finalScale, 0.08)
+    );
 
-    if (isSelected) {
-      targetY = 0.28;
-      targetZ = position[2] + 0.6;
-    }
-
-    // Lerp positions & scales
-    meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, targetX, 0.1);
-    meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, targetY, 0.1);
-    meshRef.current.position.z = THREE.MathUtils.lerp(meshRef.current.position.z, targetZ, 0.1);
-
-    // Hover tilt physics
-    let targetRotX = 0;
-    let targetRotY = rotationY;
-
-    if (isHovered && !isSelected) {
-      targetRotX = mousePos.current.y * 0.3;
-      targetRotY = rotationY + mousePos.current.x * 0.3;
-    }
-
-    meshRef.current.rotation.x = THREE.MathUtils.lerp(meshRef.current.rotation.x, targetRotX, 0.12);
-    meshRef.current.rotation.y = THREE.MathUtils.lerp(meshRef.current.rotation.y, targetRotY, 0.12);
-    meshRef.current.scale.setScalar(THREE.MathUtils.lerp(meshRef.current.scale.x, targetScale, 0.12));
-  });
-
-  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
+    // Hover tilt
     if (meshRef.current) {
-      const box = new THREE.Box3().setFromObject(meshRef.current);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-      const relativeX = (e.point.x - center.x) / (box.max.x - box.min.x);
-      const relativeY = (e.point.y - center.y) / (box.max.y - box.min.y);
-      mousePos.current = { x: relativeX, y: -relativeY };
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        hovered && !isSelected ? 0.08 : 0,
+        0.08
+      );
     }
-  };
+
+    // Glow pulse when selected or hovered
+    if (glowRef.current) {
+      const targetOpacity = isSelected
+        ? 0.25 + Math.sin(t * 2) * 0.05
+        : hovered ? 0.12 : 0;
+      (glowRef.current.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp(
+        (glowRef.current.material as THREE.MeshBasicMaterial).opacity,
+        targetOpacity,
+        0.1
+      );
+    }
+  });
 
   return (
     <group
-      ref={meshRef}
-      position={[position[0], position[1], position[2]]}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        setIsHovered(true);
-        document.body.style.cursor = 'pointer';
-      }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
-        setIsHovered(false);
-        document.body.style.cursor = 'default';
-      }}
-      onPointerMove={handlePointerMove}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
+      ref={groupRef}
+      position={position}
+      rotation={[0, rotationY, 0]}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onPointerOver={() => { setHovered(true); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { setHovered(false); document.body.style.cursor = 'default'; }}
     >
-      {/* Dynamic Front texture mapped onto thin box */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[2.5, 1.56, 0.04]} />
-        <meshPhysicalMaterial
-          map={texture}
+      {/* Outer glow ring */}
+      <mesh ref={glowRef}>
+        <ringGeometry args={[1.15, 1.55, 64]} />
+        <meshBasicMaterial
+          color={brandColor}
           transparent
-          opacity={0.88}
-          roughness={0.15}
-          metalness={0.2}
-          transmission={0.65}
-          thickness={0.5}
-          clearcoat={1.0}
-          clearcoatRoughness={0.08}
-          ior={1.45}
+          opacity={0}
+          side={THREE.DoubleSide}
+          depthWrite={false}
         />
       </mesh>
 
-      {/* Holographic glowing wireframe edge outline */}
-      <mesh position={[0, 0, 0]} scale={1.015}>
-        <boxGeometry args={[2.5, 1.56, 0.04]} />
-        <meshBasicMaterial
-          ref={glowMaterialRef}
+      {/* Card body */}
+      <RoundedBox
+        ref={meshRef}
+        args={[1.8, 2.6, 0.06]}
+        radius={0.12}
+        smoothness={4}
+        castShadow
+        receiveShadow
+      >
+        <meshPhysicalMaterial
           color={brandColor}
-          wireframe
-          transparent
-          opacity={0.4}
-          blending={THREE.AdditiveBlending}
+          metalness={0.15}
+          roughness={0.25}
+          clearcoat={1.0}
+          clearcoatRoughness={0.08}
+          reflectivity={0.6}
+          envMapIntensity={1.2}
+          emissive={color}
+          emissiveIntensity={isSelected ? 0.18 : hovered ? 0.10 : 0.04}
         />
+      </RoundedBox>
+
+      {/* Bank name */}
+      <Text
+        position={[0, 0.8, 0.05]}
+        fontSize={0.22}
+        fontWeight="bold"
+        color="#ffffff"
+        anchorX="center"
+        anchorY="middle"
+        outlineWidth={0.008}
+        outlineColor="rgba(0,0,0,0.4)"
+        maxWidth={1.5}
+      >
+        {name}
+      </Text>
+
+      {/* USSD code */}
+      <Text
+        position={[0, 0.45, 0.05]}
+        fontSize={0.13}
+        color="rgba(255,255,255,0.75)"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.04}
+      >
+        {ussd}
+      </Text>
+
+      {/* License badge */}
+      <Text
+        position={[0, -0.85, 0.05]}
+        fontSize={0.095}
+        color="rgba(255,255,255,0.55)"
+        anchorX="center"
+        anchorY="middle"
+        letterSpacing={0.06}
+      >
+        {license.toUpperCase()}
+      </Text>
+
+      {/* Divider line */}
+      <mesh position={[0, 0.25, 0.04]}>
+        <planeGeometry args={[1.3, 0.006]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.18} />
       </mesh>
+
+      {/* Bottom accent bar */}
+      <mesh position={[0, -1.1, 0.04]}>
+        <planeGeometry args={[1.5, 0.018]} />
+        <meshBasicMaterial color={brandColor} transparent opacity={0.8} />
+      </mesh>
+
+      {/* Selected indicator ring */}
+      {isSelected && (
+        <mesh position={[0, 0, -0.04]}>
+          <ringGeometry args={[1.0, 1.08, 64]} />
+          <meshBasicMaterial
+            color={brandColor}
+            transparent
+            opacity={0.9}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
     </group>
   );
 }
